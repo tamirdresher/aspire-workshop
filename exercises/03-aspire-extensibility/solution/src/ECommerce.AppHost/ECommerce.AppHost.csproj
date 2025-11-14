@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="9.0.0" />
+    <PackageReference Include="Aspire.Hosting.Azure.CosmosDB" Version="9.0.0" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Catalog.API\Catalog.API.csproj" />
+    <ProjectReference Include="..\Basket.API\Basket.API.csproj" />
+    <ProjectReference Include="..\Ordering.API\Ordering.API.csproj" />
+    <ProjectReference Include="..\AIAssistant.API\AIAssistant.API.csproj" />
+    <ProjectReference Include="..\ECommerce.ServiceDefaults\ECommerce.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>
