@@ -1,41 +1,53 @@
+using AIAssistant.API.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Add services to the container
 builder.Services.AddOpenApi();
+
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Add chat service
+builder.Services.AddSingleton<ChatService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
+app.UseCors();
 app.UseHttpsRedirection();
 
-var summaries = new[]
+// Chat endpoints
+app.MapPost("/api/chat", async (ChatRequest request, ChatService chatService) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var response = await chatService.GetChatResponseAsync(request.UserId, request.Message);
+    return Results.Ok(new ChatResponse(response));
 })
-.WithName("GetWeatherForecast");
+.WithName("SendChatMessage")
+.WithOpenApi();
+
+app.MapDelete("/api/chat/{userId}", async (string userId, ChatService chatService) =>
+{
+    await chatService.ClearConversationAsync(userId);
+    return Results.NoContent();
+})
+.WithName("ClearConversation")
+.WithOpenApi();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+record ChatRequest(string UserId, string Message);
+record ChatResponse(string Message);

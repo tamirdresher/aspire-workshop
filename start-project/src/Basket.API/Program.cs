@@ -1,41 +1,67 @@
+using Basket.API.Services;
+using ECommerce.Shared.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// Add services to the container
 builder.Services.AddOpenApi();
+
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Add basket service
+builder.Services.AddSingleton<BasketService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
+app.UseCors();
 app.UseHttpsRedirection();
 
-var summaries = new[]
+// Basket endpoints
+app.MapGet("/api/basket/{buyerId}", async (string buyerId, BasketService basketService) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var basket = await basketService.GetBasketAsync(buyerId);
+    return basket is not null ? Results.Ok(basket) : Results.Ok(new CustomerBasket { BuyerId = buyerId });
 })
-.WithName("GetWeatherForecast");
+.WithName("GetBasket")
+.WithOpenApi();
+
+app.MapPost("/api/basket", async (CustomerBasket basket, BasketService basketService) =>
+{
+    var updated = await basketService.UpdateBasketAsync(basket);
+    return Results.Ok(updated);
+})
+.WithName("UpdateBasket")
+.WithOpenApi();
+
+app.MapDelete("/api/basket/{buyerId}", async (string buyerId, BasketService basketService) =>
+{
+    await basketService.DeleteBasketAsync(buyerId);
+    return Results.NoContent();
+})
+.WithName("DeleteBasket")
+.WithOpenApi();
+
+app.MapPost("/api/basket/{buyerId}/checkout", async (string buyerId, string shippingAddress, BasketService basketService) =>
+{
+    var success = await basketService.CheckoutBasketAsync(buyerId, shippingAddress);
+    return success ? Results.Ok(new { Message = "Checkout initiated" }) : Results.BadRequest(new { Error = "Basket not found" });
+})
+.WithName("CheckoutBasket")
+.WithOpenApi();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
