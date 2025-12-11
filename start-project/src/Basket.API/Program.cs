@@ -17,6 +17,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+// PROBLEM: Manual HttpClient configuration for service-to-service communication
+// We need to configure an HttpClient for every service dependency
+// This is error-prone and requires updating configurations across environments
+builder.Services.AddHttpClient<CatalogClient>();
+
 // Add basket service
 builder.Services.AddSingleton<BasketService>();
 

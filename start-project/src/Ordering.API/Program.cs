@@ -17,6 +17,12 @@ builder.Services.AddCors(options =>
     });
 });
 
+// PROBLEM: Yet another HttpClient to configure manually
+// The configuration complexity grows with each service dependency
+// Basket depends on Catalog, Ordering depends on Basket
+// This creates a web of manual configurations
+builder.Services.AddHttpClient<BasketClient>();
+
 // Add ordering service
 builder.Services.AddSingleton<OrderingService>();
 

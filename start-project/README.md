@@ -41,16 +41,182 @@ The application consists of multiple microservices following modern distributed 
   - Order management
   - AI chat assistant
 
-## Current State
+## Current State: The Problems Without Aspire
 
-This is a traditional microservices application without Aspire:
+This is a traditional microservices application **without** .NET Aspire. While functional, it demonstrates the significant challenges of managing microservices manually.
 
-- Manual configuration of service URLs
-- No built-in service discovery
-- No centralized observability
-- Manual Azure resource configuration
-- No development dashboard
-- Each service runs independently
+### ⚠️ Current Architecture Challenges
+
+```mermaid
+graph TB
+    subgraph "Developer's Machine"
+        subgraph "7 Terminal Windows Required"
+            T1[Terminal 1<br/>Cosmos DB Emulator<br/>Port 8081]
+            T2[Terminal 2<br/>Azurite Storage<br/>Port 10000-10002]
+            T3[Terminal 3<br/>Catalog.API<br/>Port 7001]
+            T4[Terminal 4<br/>Basket.API<br/>Port 7002]
+            T5[Terminal 5<br/>Ordering.API<br/>Port 7003]
+            T6[Terminal 6<br/>AIAssistant.API<br/>Port 7004]
+            T7[Terminal 7<br/>React Frontend<br/>Port 5173]
+        end
+    end
+    
+    T7 -->|"https://localhost:7001<br/>(hardcoded)"| T3
+    T7 -->|"https://localhost:7002<br/>(hardcoded)"| T4
+    T7 -->|"https://localhost:7003<br/>(hardcoded)"| T5
+    T7 -->|"https://localhost:7004<br/>(hardcoded)"| T6
+    
+    T4 -->|"https://localhost:7001<br/>(hardcoded in config)"| T3
+    T5 -->|"https://localhost:7002<br/>(hardcoded in config)"| T4
+    
+    T3 --> T1
+    T4 --> T2
+    T5 --> T2
+    
+    style T1 fill:#ffe1e1
+    style T2 fill:#ffe1e1
+    style T3 fill:#ffe1e1
+    style T4 fill:#ffe1e1
+    style T5 fill:#ffe1e1
+    style T6 fill:#ffe1e1
+    style T7 fill:#e1f5ff
+```
+
+### 🔥 Pain Points You'll Experience
+
+#### 1. **Configuration Hell**
+- **18+ hardcoded URLs** across multiple files
+- Different configs for dev/staging/production
+- Service URLs in: appsettings.json (×3), .env files, TypeScript code
+- Port changes require updates in 4+ places
+
+**Example:** Adding Basket → Catalog dependency requires:
+1. Edit `Basket.API/appsettings.json` to add Catalog URL
+2. Edit `Basket.API/Program.cs` to configure HttpClient
+3. Create `CatalogClient.cs` with hardcoded URL logic
+4. Update configs for staging and production
+5. Document the new dependency for team
+
+#### 2. **Startup Complexity**
+- **Manual startup order required:** Infrastructure → Catalog → Basket → Ordering → Frontend
+- **7 terminal windows** to manage (see diagram above)
+- **5-10 minutes** to start everything
+- If you start services in wrong order → cascading failures
+
+#### 3. **Port Conflict Nightmare**
+- **Fixed port allocation:** 7001, 7002, 7003, 7004, 5173, 8081, 10000-10002
+- **Team conflicts:** Multiple developers can't run the same services simultaneously
+- **Resolution:** Manually edit launchSettings.json, update all dependent configs
+
+#### 4. **No Observability**
+- **Scattered logs** across 7 different terminal windows
+- **No request tracing** across services
+- **No performance metrics**
+- **Debugging:** "Find the error in 7 different log streams" 😫
+
+#### 5. **Service Discovery Fragility**
+```csharp
+// Basket.API needs to call Catalog.API
+// Current approach: Hardcoded URL from configuration
+var catalogUrl = configuration["ServiceUrls:CatalogApi"]; // What if this is wrong?
+var client = new HttpClient { BaseAddress = new Uri(catalogUrl) };
+
+// Problems:
+// - If Catalog.API changes ports → breaks
+// - If URL is wrong → silent failure or cryptic error
+// - Different per environment → config drift
+// - No automatic retry, circuit breaker, or fallback
+```
+
+### 📊 Before vs. After Aspire
+
+| Challenge | **Without Aspire (Current)** | **With Aspire (Exercise 1)** |
+|-----------|------------------------------|------------------------------|
+| **Service URLs** | 18+ hardcoded entries | Service names (e.g., `https+http://catalog-api`) |
+| **Startup** | 7 terminals, manual order, 5-10 min | F5, automatic, 30 seconds |
+| **Port Management** | Fixed ports, conflicts common | Dynamic allocation, no conflicts |
+| **Observability** | 7 separate log streams | Unified dashboard with tracing |
+| **Configuration** | Per-environment appsettings | Centralized in AppHost |
+| **Service Discovery** | Manual HttpClient setup | Automatic with `.WithReference()` |
+| **Debugging** | Hunt across terminals | Single pane of glass |
+| **Team Onboarding** | 50-line setup guide | "Clone and F5" |
+
+### 🎯 What This Workshop Teaches
+
+**Current Reality (This Project):**
+```bash
+# To run this application, you must:
+1. Start Cosmos DB Emulator (wait 2 minutes)
+2. Start Azurite storage emulator
+3. Start Catalog.API (depends on Cosmos)
+4. Start Basket.API (depends on Catalog + Azurite)
+5. Start Ordering.API (depends on Basket + Azurite)
+6. Start AIAssistant.API (optional)
+7. Start React frontend (depends on all APIs)
+
+Total: 7 terminals, ~10 minutes, high chance of errors
+```
+
+**With Aspire (After Exercise 1):**
+```bash
+# To run this application:
+1. Press F5
+
+That's it. Everything starts automatically in correct order.
+Aspire Dashboard opens showing all services, logs, traces, metrics.
+```
+
+### 📚 Deep Dive Documentation
+
+Want to understand exactly what problems Aspire solves?
+
+- **[Service Discovery Challenges](docs/SERVICE-DISCOVERY-CHALLENGES.md)** - Detailed breakdown of manual service discovery problems
+- **[Troubleshooting Guide](docs/BEFORE-ASPIRE-TROUBLESHOOTING.md)** - Common errors and how to fix them (spoiler: Aspire fixes them all automatically!)
+
+### 🏗️ Service Dependencies
+
+```mermaid
+graph LR
+    Frontend[ecommerce-web<br/>React SPA] -->|GET /api/catalog| Catalog[Catalog.API]
+    Frontend -->|POST /api/basket| Basket[Basket.API]
+    Frontend -->|POST /api/orders| Ordering[Ordering.API]
+    Frontend -->|POST /api/chat| AI[AIAssistant.API]
+    
+    Basket -->|Validate Products| Catalog
+    Ordering -->|Get Basket| Basket
+    
+    Catalog --> Cosmos[(Cosmos DB<br/>Port 8081)]
+    Basket --> Queue[Azure Queue<br/>Ports 10000-10002]
+    Ordering --> Queue
+    AI --> OpenAI[Azure OpenAI]
+    
+    style Frontend fill:#e1f5ff
+    style Catalog fill:#ffe1e1
+    style Basket fill:#ffe1e1
+    style Ordering fill:#ffe1e1
+    style AI fill:#ffe1e1
+    style Cosmos fill:#fff4e1
+    style Queue fill:#fff4e1
+    style OpenAI fill:#fff4e1
+```
+
+**Dependency Chain:**
+- Frontend depends on all 4 APIs
+- Basket.API depends on Catalog.API
+- Ordering.API depends on Basket.API
+- All APIs depend on Azure resources (Cosmos DB, Storage, OpenAI)
+
+**Manual Management Issues:**
+- ❌ Must start in correct order or face cascading failures
+- ❌ Each dependency requires manual configuration
+- ❌ No automatic health checks
+- ❌ No automatic retry or circuit breaker patterns
+
+**After Aspire Migration:**
+- ✅ Declare dependencies once in AppHost
+- ✅ Automatic orchestration and startup order
+- ✅ Built-in health checks
+- ✅ Automatic service discovery and resilience
 
 ## Azure Services Used
 
