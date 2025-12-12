@@ -2,8 +2,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache");
 
-var dbPassword = builder.AddParameter("dbPassword", secret: true);
-var db = builder.AddPostgres("db", password: dbPassword)
+var db = builder.AddPostgres("db")
     .AddDatabase("complexdb");
 
 var messaging = builder.AddRabbitMQ("messaging");
@@ -14,12 +13,15 @@ var backend = builder.AddProject<Projects.Backend>("backend")
     .WithReference(messaging);
 
 var aiService = builder.AddPythonApp("ai-service", "../../src/ai-service", "main.py")
+    .WithReference(db)
+    .WithReference(messaging)
     .WithHttpEndpoint(env: "PORT", port: 8000)
     .WithExternalHttpEndpoints();
 
 builder.AddNpmApp("frontend", "../../src/frontend")
     .WithReference(backend)
     .WithReference(aiService)
-    .WithHttpEndpoint(targetPort: 3000, name: "http");
+    .WithHttpEndpoint(targetPort: 3000, name: "http")
+    .WithExternalHttpEndpoints();
 
 builder.Build().Run();

@@ -69,6 +69,33 @@ In Docker Compose, secrets and configuration often end up hardcoded in YAML file
 
 For example, the `dbPassword` parameter is defined in code using `AddParameter`. This allows you to provide values securely via configuration providers like User Secrets or Azure Key Vault without modifying the orchestration code itself.
 
+### Integration Testing
+One of Aspire's most powerful features is its **built-in testing support**. The `ComplexApp.Tests` project demonstrates how to write integration tests that spin up the entire distributed application with real infrastructure.
+
+**Key Testing Benefits:**
+- ✅ **Real Infrastructure**: Tests run against actual PostgreSQL, Redis, and RabbitMQ containers (not mocks)
+- ✅ **Automatic Resource Management**: Containers start before tests, clean up after
+- ✅ **Service Discovery**: HTTP clients automatically discover service endpoints
+- ✅ **End-to-End Testing**: Test complete flows across multiple services
+- ✅ **Fast Feedback**: Parallel test execution with isolated resources
+
+To run the tests:
+```bash
+cd complex-comparison/aspire
+dotnet test
+```
+
+See [`ComplexApp.Tests/README.md`](./aspire/ComplexApp.Tests/README.md) for detailed documentation on Aspire's testing capabilities.
+
+**Docker Compose Testing**: With Docker Compose, you would need to manually:
+1. Start containers with `docker-compose up`
+2. Wait for services to be ready
+3. Run tests against hardcoded ports
+4. Clean up containers manually
+5. Handle port conflicts and race conditions
+
+**Aspire Testing**: One command (`dotnet test`) automatically handles everything - spinning up containers, discovering endpoints, running tests, and cleaning up.
+
 ## Comparison Summary
 
 | Feature | Docker Compose | .NET Aspire |
@@ -79,5 +106,6 @@ For example, the `dbPassword` parameter is defined in code using `AddParameter`.
 | **Developer Experience** | Manual venv/container setup | Auto-managed venv & dependencies |
 | **Polyglot Support** | Generic Containers | First-class integrations (e.g., Python, Node.js) |
 | **Secrets Management** | `.env` files / Hardcoded | Abstracted Parameters (User Secrets, Key Vault) |
+| **Integration Testing** | Manual setup, hardcoded ports, cleanup scripts | Built-in `Aspire.Hosting.Testing`, automatic resource management |
 
 This comparison highlights how .NET Aspire simplifies the complexity of managing multi-service applications during development compared to manual Docker Compose configuration.

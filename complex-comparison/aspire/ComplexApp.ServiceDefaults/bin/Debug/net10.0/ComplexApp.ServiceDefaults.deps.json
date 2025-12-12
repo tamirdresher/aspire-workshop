@@ -363,7 +363,7 @@
     "OpenTelemetry.Extensions.Hosting/1.13.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-gULeizu0WH4YxnVltLO/Ml12aGxpk2Qrz3dm3MUgohQ/Y8HsGDzuAhawEP1eas6dMO61PJta1dy6KqNbVIJQyw==",
+      "sha512": "sha512-sHhhpZ8k4H1/kYkl4GJZjG1J0cKtSZJV75CzRL6x4R707e5m8MBxDA6dq4VUj7oycigPEmOaKwGCHE1irriotA==",
       "path": "opentelemetry.extensions.hosting/1.13.1",
       "hashPath": "opentelemetry.extensions.hosting.1.13.1.nupkg.sha512"
     },

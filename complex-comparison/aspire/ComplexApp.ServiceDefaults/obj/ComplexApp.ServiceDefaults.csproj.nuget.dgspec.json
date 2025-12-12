@@ -10,7 +10,7 @@
         "projectUniqueName": "C:\\Users\\tamirdresher\\source\\repos\\aspire-workshop\\complex-comparison\\aspire\\ComplexApp.ServiceDefaults\\ComplexApp.ServiceDefaults.csproj",
         "projectName": "ComplexApp.ServiceDefaults",
         "projectPath": "C:\\Users\\tamirdresher\\source\\repos\\aspire-workshop\\complex-comparison\\aspire\\ComplexApp.ServiceDefaults\\ComplexApp.ServiceDefaults.csproj",
-        "packagesPath": "C:\\Users\\tamirdresher\\.nuget\\packages\\",
+        "packagesPath": "C:\\.tools\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\tamirdresher\\source\\repos\\aspire-workshop\\complex-comparison\\aspire\\ComplexApp.ServiceDefaults\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
@@ -28,9 +28,7 @@
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {},
-          "https://microsoft.pkgs.visualstudio.com/_packaging/WD.Services.OneFeed/nuget/v3/index.json": {},
-          "https://microsoft.pkgs.visualstudio.com/_packaging/WDATP/nuget/v3/index.json": {},
-          "https://pkgs.dev.azure.com/microsoft/WDATP/_packaging/BaseRP/nuget/v3/index.json": {}
+          "https://pkgs.dev.azure.com/microsoft/_packaging/WDATP/nuget/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
@@ -102,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.101/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
