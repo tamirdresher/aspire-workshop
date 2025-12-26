@@ -1,18 +1,11 @@
-﻿// =======================================================
-// DevProxyHostingExtensions.cs  (updated to match what we discussed)
-// Changes vs your current code:
-// 1) Adds AddUrlMock(...) -> returns IResourceBuilder<ExternalServiceResource> (ExternalServiceResource is sealed)
-// 2) AddUrlMock annotates DevProxyResource; hook merges these into urlsToWatch
-// 3) Generates devproxyrc.generated.json + mocks file at app start (BeforeStartAsync), not during build
-// 4) Keeps your “run devproxy.exe directly” approach (no BuildWindowsRunScript / wrapper execution)
-// =======================================================
-
-using Aspire.Hosting;
+﻿using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Eventing;
 using Aspire.Hosting.Lifecycle;
+using Humanizer.Localisation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -25,13 +18,11 @@ namespace AspireCustomResource.AppHost;
 /// Typed resource for Microsoft Dev Proxy.
 /// Implements IResourceWithServiceDiscovery so other resources can call .WithReference(devProxy).
 /// </summary>
-public sealed class DevProxyResource : ExecutableResource, IResourceWithServiceDiscovery
+public sealed class DevProxyResource(string name, string command, string workingDirectory)
+    : ExecutableResource(name, command, workingDirectory), IResourceWithServiceDiscovery
 {
     public const string ProxyEndpointName = "proxy";
     public const string ApiEndpointName = "api";
-
-    public DevProxyResource(string name, string command, string workingDirectory)
-        : base(name, command, workingDirectory) { }
 
     public EndpointReference ProxyEndpoint => this.GetEndpoint(ProxyEndpointName);
 
@@ -42,15 +33,6 @@ public sealed class DevProxyResource : ExecutableResource, IResourceWithServiceD
 
     internal string GeneratedConfigPath => Path.Combine(WorkDir, GeneratedConfigFileName);
     internal string GeneratedMocksPath => Path.Combine(WorkDir, GeneratedMocksFileName);
-}
-
-public sealed record DevProxyMocksOptions
-{
-    public string? ExistingFilePath { get; init; }
-    public string? JsonContent { get; init; }
-
-    public string FileName { get; init; } = "mocks.generated.json";
-    public bool ForceWrite { get; init; } = false;
 }
 
 public sealed record DevProxyOptions
@@ -68,22 +50,14 @@ public sealed record DevProxyOptions
     public bool AsSystemProxy { get; init; } = false;
     public bool InstallCert { get; init; } = false;
 
-    public DevProxyMocksOptions? Mocks { get; init; }
-
     /// <summary>Seed urlsToWatch in addition to AddUrlMock calls.</summary>
-    public List<string> UrlsToWatch { get; init; } = new();
+    public List<string> UrlsToWatch { get; init; } = [];
 }
 
-// ----------------------------
-// Annotations
-// ----------------------------
 internal sealed record DevProxyOptionsAnnotation(DevProxyOptions Options) : IResourceAnnotation;
 internal sealed record DevProxyUrlToWatchAnnotation(string Url) : IResourceAnnotation;
+internal sealed record DevProxyMockEntryAnnotation(MockResponseEntry Entry) : IResourceAnnotation;
 
-
-// ----------------------------
-// Public extensions
-// ----------------------------
 public static class DevProxyHostingExtensions
 {
     public static IResourceBuilder<DevProxyResource> AddMicrosoftDevProxy(
@@ -91,10 +65,9 @@ public static class DevProxyHostingExtensions
         string name,
         DevProxyOptions options)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Resource name must be provided.", nameof(name));
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(options);
 
-        // Keep your working directory logic, but pin generated files into a stable per-resource folder
         var baseDir = options.WorkingDirectory == "."
             ? builder.AppHostDirectory
             : Path.GetFullPath(options.WorkingDirectory);
@@ -102,104 +75,26 @@ public static class DevProxyHostingExtensions
         var workingDirAbs = Path.Combine(baseDir, ".aspire", "devproxy", name);
         Directory.CreateDirectory(workingDirAbs);
 
-        // Keep your "run devproxy directly" approach (no wrapper scripts).
-        // IMPORTANT: this assumes devproxy exists where we point to, or is on PATH for non-Windows.
         var command = ResolveDevProxyCommand();
 
-        DevProxyResource resource = new(name, command, workingDirAbs);
+        var resource = new DevProxyResource(name, command, workingDirAbs);
         var devProxy = builder.AddResource(resource)
+                               .WithInitialState(new()
+                                {
+                                    ResourceType = "DevProxy",
+                                    CreationTimeStamp = DateTime.UtcNow,
+                                    State = KnownResourceStates.NotStarted,
+                                    Properties = [
+                                        new(CustomResourceKnownProperties.Source, "Dev Proxy")
+                                    ]
+                                })
                               .WithAnnotation(new DevProxyOptionsAnnotation(options));
 
-        devProxy.OnBeforeResourceStarted((devProxy, beforeStartEvent, ct) =>
+        devProxy.OnInitializeResource(async (devProxyResource, initEvent, ct) =>
         {
-            Directory.CreateDirectory(devProxy.WorkDir);
-
-            // 1) Materialize mocks into WorkDir (optional)
-            var mocksPath = MaterializeMocks(
-                workingDirectoryAbsolute: devProxy.WorkDir,
-                mocksOptions: options.Mocks);
-
-            // 2) Collect urlsToWatch from options + AddUrlMock annotations
-            var urlsToWatch = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var u in options.UrlsToWatch)
-            {
-                if (!string.IsNullOrWhiteSpace(u)) urlsToWatch.Add(u.Trim());
-            }
-
-            foreach (var ann in devProxy.Annotations.OfType<DevProxyUrlToWatchAnnotation>())
-            {
-                if (!string.IsNullOrWhiteSpace(ann.Url)) urlsToWatch.Add(ann.Url.Trim());
-            }
-
-            // 3) Load base config if exists; else minimal
-            var baseConfigPath = ResolvePath(options.BaseConfigFile, devProxy.WorkDir);
-
-            JsonObject config;
-            if (File.Exists(baseConfigPath))
-            {
-                config = JsonNode.Parse(File.ReadAllText(baseConfigPath, Encoding.UTF8))?.AsObject()
-                         ?? new JsonObject();
-            }
-            else
-            {
-                config = new JsonObject();
-            }
-
-            // 4) Merge urlsToWatch
-            var urlsArr = config["urlsToWatch"] as JsonArray ?? new JsonArray();
-            config["urlsToWatch"] = urlsArr;
-
-            var existingUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var n in urlsArr)
-            {
-                if (n is JsonValue v && v.TryGetValue<string>(out var s) && !string.IsNullOrWhiteSpace(s))
-                    existingUrls.Add(s.Trim());
-            }
-
-            foreach (var u in urlsToWatch)
-            {
-                if (existingUrls.Add(u))
-                    urlsArr.Add(u);
-            }
-
-            // 5) Ensure MockResponsePlugin config (only if mocks are present)
-            if (!string.IsNullOrWhiteSpace(mocksPath))
-            {
-                var plugins = config["plugins"] as JsonArray ?? new JsonArray();
-                config["plugins"] = plugins;
-
-                var hasMock = plugins.OfType<JsonObject>().Any(p =>
-                    string.Equals(p["name"]?.ToString(), "MockResponsePlugin", StringComparison.OrdinalIgnoreCase));
-
-                if (!hasMock)
-                {
-                    plugins.Add(new JsonObject
-                    {
-                        ["name"] = "MockResponsePlugin",
-                        ["enabled"] = true,
-                        ["pluginPath"] = "~appFolder/plugins/DevProxy.Plugins.dll",
-                        ["configSection"] = "mocksPlugin"
-                    });
-                }
-
-                config["mocksPlugin"] = new JsonObject
-                {
-                    // keep portable: relative filename in WorkDir
-                    ["mocksFile"] = Path.GetFileName(mocksPath)
-                };
-            }
-
-            // 6) Write generated config next to mocks in WorkDir
-            File.WriteAllText(
-                devProxy.GeneratedConfigPath,
-                config.ToJsonString(new JsonSerializerOptions { WriteIndented = true }),
-                Encoding.UTF8);
-
-            return Task.CompletedTask;
+            await ConfigureDevProxyAsync(devProxyResource, options, initEvent, ct);
         });
 
-        // NOTE: config file is generated at startup, but the path is stable.
         var generatedConfigPath = Path.Combine(workingDirAbs, "devproxyrc.generated.json");
 
         devProxy.WithArgs(
@@ -217,45 +112,187 @@ public static class DevProxyHostingExtensions
             .WithHttpEndpoint(port: options.ApiPort, targetPort: options.ApiPort, name: DevProxyResource.ApiEndpointName, isProxied: false);
 
         return devProxy;
+    }
 
-        static string ResolveDevProxyCommand()
+    private static async Task ConfigureDevProxyAsync(DevProxyResource devProxy, DevProxyOptions options, InitializeResourceEvent initEvent, CancellationToken ct)
+    {
+        var log = initEvent.Logger;
+        var eventing = initEvent.Eventing;
+        var notification = initEvent.Notifications;
+        var services = initEvent.Services;
+
+        Directory.CreateDirectory(devProxy.WorkDir);
+        log.LogTrace("Current working directory {workDir}", devProxy.WorkDir);
+
+        await notification.PublishUpdateAsync(devProxy, s => s with
         {
-            if (OperatingSystem.IsWindows())
-            {
-                // Prefer the most common per-user winget location you already used
-                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            StartTimeStamp = DateTime.UtcNow,
+            State = "Collecting Mocks"
+        });
+        // 1. Collect Mocks (from annotations)
+        var allMocks = CollectMocks(devProxy);
+        await Task.Delay(30000);
+        await notification.PublishUpdateAsync(devProxy, s => s with
+        {
+            StartTimeStamp = DateTime.UtcNow,
+            State = "Materialize Mocks"
+        });
+        // 2. Materialize mocks
+        var mocksPath = MaterializeMocks(devProxy.WorkDir, allMocks);
 
-                var p1 = Path.Combine(localAppData, "Programs", "Dev Proxy", "devproxy.exe");
-                if (File.Exists(p1)) return p1;
+        await notification.PublishUpdateAsync(devProxy, s => s with
+        {
+            StartTimeStamp = DateTime.UtcNow,
+            State = "Collect Urls To Watch"
+        });
+        // 3. Collect URLs to watch
+        var urlsToWatch = CollectUrlsToWatch(devProxy, options);
 
-                // WindowsApps shim (often exists and avoids PATH refresh issues)
-                var p2 = Path.Combine(localAppData, "Microsoft", "WindowsApps", "devproxy.exe");
-                if (File.Exists(p2)) return p2;
+        // 4. Load or create config
+        var config = LoadBaseConfig(options.BaseConfigFile, devProxy.WorkDir);
 
-                // Fallback: PATH (requires restart after first install)
-                return "devproxy.exe";
-            }
+        // 5. Merge URLs
+        MergeUrlsToWatch(config, urlsToWatch);
 
-            // macOS / Linux: rely on PATH (brew/setup.sh usually place it there)
-            return "devproxy";
+        // 6. Configure Mock Plugin
+        if (!string.IsNullOrWhiteSpace(mocksPath))
+        {
+            ConfigureMockPlugin(config, mocksPath);
         }
+
+        // 7. Write generated config
+        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        File.WriteAllText(
+            devProxy.GeneratedConfigPath,
+            JsonSerializer.Serialize(config, jsonOptions),
+            Encoding.UTF8);
+
+        await notification.PublishUpdateAsync(devProxy, s => s with
+        {
+            StartTimeStamp = DateTime.UtcNow,
+            State = KnownResourceStates.Running
+        });
+    }
+
+    private static List<MockResponseEntry> CollectMocks(DevProxyResource devProxy)
+    {
+        var mocks = new List<MockResponseEntry>();
+
+        // From annotations (added via AddUrlMock builder)
+        foreach (var ann in devProxy.Annotations.OfType<DevProxyMockEntryAnnotation>())
+        {
+            mocks.Add(ann.Entry);
+        }
+
+        return mocks;
+    }
+
+    private static HashSet<string> CollectUrlsToWatch(DevProxyResource devProxy, DevProxyOptions options)
+    {
+        var urlsToWatch = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var u in options.UrlsToWatch)
+        {
+            if (!string.IsNullOrWhiteSpace(u)) urlsToWatch.Add(u.Trim());
+        }
+
+        foreach (var ann in devProxy.Annotations.OfType<DevProxyUrlToWatchAnnotation>())
+        {
+            if (!string.IsNullOrWhiteSpace(ann.Url)) urlsToWatch.Add(ann.Url.Trim());
+        }
+
+        return urlsToWatch;
+    }
+
+    private static DevProxyConfiguration LoadBaseConfig(string baseConfigFile, string workDir)
+    {
+        var baseConfigPath = ResolvePath(baseConfigFile, workDir);
+        if (File.Exists(baseConfigPath))
+        {
+            try
+            {
+                var json = File.ReadAllText(baseConfigPath, Encoding.UTF8);
+                return JsonSerializer.Deserialize<DevProxyConfiguration>(json) ?? new DevProxyConfiguration();
+            }
+            catch
+            {
+                return new DevProxyConfiguration();
+            }
+        }
+        return new DevProxyConfiguration();
+    }
+
+    private static void MergeUrlsToWatch(DevProxyConfiguration config, HashSet<string> urlsToWatch)
+    {
+        var existingUrls = new HashSet<string>(config.UrlsToWatch, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var u in urlsToWatch)
+        {
+            if (existingUrls.Add(u))
+            {
+                config.UrlsToWatch.Add(u);
+            }
+        }
+    }
+
+    private static void ConfigureMockPlugin(DevProxyConfiguration config, string mocksPath)
+    {
+        var hasMock = config.Plugins.Any(p =>
+            string.Equals(p.Name, "MockResponsePlugin", StringComparison.OrdinalIgnoreCase));
+
+        if (!hasMock)
+        {
+            config.Plugins.Add(new DevProxyPlugin
+            {
+                Name = "MockResponsePlugin",
+                Enabled = true,
+                PluginPath = "~appFolder/plugins/DevProxy.Plugins.dll",
+                ConfigSection = "mocksPlugin"
+            });
+        }
+
+        config.MocksPlugin = new MockResponsePluginConfig
+        {
+            // keep portable: relative filename in WorkDir
+            MocksFile = Path.GetFileName(mocksPath)
+        };
     }
 
     /// <summary>
     /// Add a URL mock resource as an ExternalServiceResource (sealed type) and make it a child in the dashboard.
     /// Also ensures the URL gets appended into urlsToWatch of devproxyrc.generated.json at startup.
+    /// Optionally configure mock responses for this URL using a fluent builder.
     /// </summary>
     public static IResourceBuilder<ExternalServiceResource> AddUrlMock(
         this IResourceBuilder<DevProxyResource> devProxy,
         string name,
         string url,
-        string urlPattern)
+        string urlPattern,
+        Action<MockResponseListBuilder>? configureMocks = null)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             throw new ArgumentException($"Invalid absolute URL: '{url}'", nameof(url));
 
         // Store URL for config generation later
         devProxy.WithAnnotation(new DevProxyUrlToWatchAnnotation(urlPattern));
+
+        // If mock configuration is provided, build it and store it
+        if (configureMocks != null)
+        {
+            var listBuilder = new MockResponseListBuilder();
+            configureMocks(listBuilder);
+            var entries = listBuilder.Build();
+
+            foreach (var entry in entries)
+            {
+                // If the user didn't specify a URL in the mock entry, default to the pattern
+                if (string.IsNullOrWhiteSpace(entry.Request.Url))
+                {
+                    entry.Request.Url = urlPattern;
+                }
+                devProxy.WithAnnotation(new DevProxyMockEntryAnnotation(entry));
+            }
+        }
 
         // Create the external resource (cannot derive from ExternalServiceResource)
         var ext = devProxy.ApplicationBuilder.AddExternalService(name, uri.ToString());
@@ -285,45 +322,43 @@ public static class DevProxyHostingExtensions
         });
     }
 
-
-    private static string? MaterializeMocks(string workingDirectoryAbsolute, DevProxyMocksOptions? mocksOptions)
+    private static string ResolveDevProxyCommand()
     {
-        if (mocksOptions is null)
+        if (OperatingSystem.IsWindows())
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            var p1 = Path.Combine(localAppData, "Programs", "Dev Proxy", "devproxy.exe");
+            if (File.Exists(p1)) return p1;
+
+            var p2 = Path.Combine(localAppData, "Microsoft", "WindowsApps", "devproxy.exe");
+            if (File.Exists(p2)) return p2;
+
+            return "devproxy.exe";
+        }
+
+        return "devproxy";
+    }
+
+    private static string? MaterializeMocks(string workingDirectoryAbsolute, List<MockResponseEntry> allMocks)
+    {
+        // If we have no mocks at all (neither from options nor annotations), return null
+        if (allMocks.Count == 0)
             return null;
 
         Directory.CreateDirectory(workingDirectoryAbsolute);
 
-        var destPath = Path.Combine(workingDirectoryAbsolute, mocksOptions.FileName);
+        var fileName = "mocks.generated.json";
+        var destPath = Path.Combine(workingDirectoryAbsolute, fileName);
+        var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
-        if (!string.IsNullOrWhiteSpace(mocksOptions.JsonContent))
-        {
-            var newBytes = Encoding.UTF8.GetBytes(mocksOptions.JsonContent!);
-
-            if (!mocksOptions.ForceWrite && File.Exists(destPath))
-            {
-                var oldBytes = File.ReadAllBytes(destPath);
-                if (SHA256.HashData(oldBytes).AsSpan().SequenceEqual(SHA256.HashData(newBytes)))
-                    return destPath;
-            }
-
-            File.WriteAllBytes(destPath, newBytes);
-            return destPath;
-        }
-
-        if (!string.IsNullOrWhiteSpace(mocksOptions.ExistingFilePath))
-        {
-            var src = ResolvePath(mocksOptions.ExistingFilePath!, workingDirectoryAbsolute);
-            if (!File.Exists(src))
-                throw new FileNotFoundException($"Mocks file not found: {src}", src);
-
-            File.Copy(src, destPath, overwrite: true);
-            return destPath;
-        }
-
-        return null;
+        // Priority 1: Collected Mocks (from annotations)
+        var config = new MockResponseConfiguration { Mocks = allMocks };
+        var json = JsonSerializer.Serialize(config, jsonOptions);
+        File.WriteAllText(destPath, json, Encoding.UTF8);
+        return destPath;
     }
 
     private static string ResolvePath(string path, string baseDir)
         => Path.IsPathRooted(path) ? path : Path.GetFullPath(Path.Combine(baseDir, path));
-
 }

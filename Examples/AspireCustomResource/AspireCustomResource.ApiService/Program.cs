@@ -38,8 +38,12 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 
-app.MapGet("/example-data", async (ExampleApiClient client) =>
+app.MapGet("/example-data", async (bool? fail, ExampleApiClient client) =>
 {
+    if (fail == true)
+    {
+        return await client.GetFailDataAsync();
+    }
     return await client.GetDataAsync();
 })
 .WithName("GetExampleData");

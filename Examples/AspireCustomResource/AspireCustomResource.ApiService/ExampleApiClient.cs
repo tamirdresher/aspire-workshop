@@ -4,4 +4,9 @@ public class ExampleApiClient(HttpClient httpClient)
     {
         return await httpClient.GetStringAsync("/data");
     }
+
+    public async Task<string> GetFailDataAsync()
+    {
+        return await httpClient.GetStringAsync("/data/fail");
+    }
 }

@@ -63,26 +63,6 @@ var cache = builder.AddRedis("cache")
 
 
 
-var mocksJson = """
-{
-  "mocks": [
-    {
-      "request": { "url": "http://example.com/data", "method": "GET" },
-      "response": {
-        "statusCode": 200,
-        "headers": [ 
-          {
-            "name": "content-type",
-            "value": "application/json; odata.metadata=minimal"
-          }
-        ],
-        "body": { "message": "hello from inline mocks" }
-      }
-    }
-  ]
-}
-""";
-
 var devProxy = builder.AddMicrosoftDevProxy(
     name: "devproxy",
     options: new DevProxyOptions
@@ -90,16 +70,28 @@ var devProxy = builder.AddMicrosoftDevProxy(
         WorkingDirectory = builder.AppHostDirectory,
         BaseConfigFile = "devproxyrc.json", // optional; will be merged if exists
         Port = 18000,
-        ApiPort = 8897,
-        Mocks = new DevProxyMocksOptions
-        {
-            JsonContent = mocksJson,
-            FileName = "mocks.json"
-        }
+        ApiPort = 8897
     });
-var example= devProxy.AddUrlMock(    "example",
+
+var example = devProxy.AddUrlMock("example",
     urlPattern: "http://example.com/*",
-    url: "http://example.com");
+    url: "http://example.com",
+    configureMocks: mocks =>
+    {
+        mocks.Add(mock => mock
+            .WithUrl("http://example.com/data")
+            .WithMethod("GET")
+            .WithStatusCode(200)
+            .WithHeader("content-type", "application/json; odata.metadata=minimal")
+            .WithBody(new { message = "hello from inline mocks" }));
+
+            mocks.Add(mock => mock
+            .WithUrl("http://example.com/data/fail")
+            .WithMethod("GET")
+            .WithStatusCode(400)
+            .WithHeader("content-type", "application/json; odata.metadata=minimal")
+            .WithBody(new { message = "example pf failing from inline mocks" }));
+    });
 
 var apiService = builder.AddProject<Projects.AspireCustomResource_ApiService>("apiservice")
     .WithReference(cache)

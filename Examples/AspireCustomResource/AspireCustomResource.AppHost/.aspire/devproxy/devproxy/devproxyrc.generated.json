@@ -1,7 +1,4 @@
 ﻿{
-  "urlsToWatch": [
-    "http://example.com/*"
-  ],
   "plugins": [
     {
       "name": "MockResponsePlugin",
@@ -10,7 +7,11 @@
       "configSection": "mocksPlugin"
     }
   ],
+  "urlsToWatch": [
+    "http://example.com/*"
+  ],
   "mocksPlugin": {
-    "mocksFile": "mocks.json"
-  }
+    "mocksFile": "mocks.generated.json"
+  },
+  "logLevel": null
 }
