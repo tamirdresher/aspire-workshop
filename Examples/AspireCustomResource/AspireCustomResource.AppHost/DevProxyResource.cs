@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using YamlDotNet.Core.Tokens;
 
 namespace AspireCustomResource.AppHost;
 
@@ -90,6 +91,7 @@ public static class DevProxyHostingExtensions
                                 })
                               .WithAnnotation(new DevProxyOptionsAnnotation(options));
 
+       
         devProxy.OnInitializeResource(async (devProxyResource, initEvent, ct) =>
         {
             await ConfigureDevProxyAsync(devProxyResource, options, initEvent, ct);
@@ -120,6 +122,9 @@ public static class DevProxyHostingExtensions
         var eventing = initEvent.Eventing;
         var notification = initEvent.Notifications;
         var services = initEvent.Services;
+
+        await eventing.PublishAsync(new BeforeResourceStartedEvent(devProxy, services), ct);
+
 
         Directory.CreateDirectory(devProxy.WorkDir);
         log.LogTrace("Current working directory {workDir}", devProxy.WorkDir);
