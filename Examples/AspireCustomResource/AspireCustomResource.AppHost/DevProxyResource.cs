@@ -86,7 +86,7 @@ public static class DevProxyHostingExtensions
                                     CreationTimeStamp = DateTime.UtcNow,
                                     State = KnownResourceStates.NotStarted,
                                     Properties = [
-                                        new(CustomResourceKnownProperties.Source, "Dev Proxy")
+                                        new(CustomResourceKnownProperties.Source, "DevProxy")
                                     ]
                                 })
                               .WithAnnotation(new DevProxyOptionsAnnotation(options));
