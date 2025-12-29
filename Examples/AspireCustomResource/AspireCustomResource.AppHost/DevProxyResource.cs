@@ -90,13 +90,12 @@ public static class DevProxyHostingExtensions
                                     ]
                                 })
                               .WithAnnotation(new DevProxyOptionsAnnotation(options));
-
        
         devProxy.OnInitializeResource(async (devProxyResource, initEvent, ct) =>
         {
             await ConfigureDevProxyAsync(devProxyResource, options, initEvent, ct);
         });
-
+devProxy.on
         var generatedConfigPath = Path.Combine(workingDirAbs, "devproxyrc.generated.json");
 
         devProxy.WithArgs(
