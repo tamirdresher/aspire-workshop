@@ -114,6 +114,23 @@ var apiService = builder.AddProject<Projects.AspireCustomResource_ApiService>("a
     .WithReference(devProxy)
     .WithDevProxy(devProxy) ; 
 
+apiService.WithUrl($"{apiService.Resource.GetEndpoint("https")}/scalar", "Scalar");
+apiService
+    .WithUrls(c => 
+    {
+        c.Urls.ForEach(u => 
+        {   
+            u.DisplayText = $"API - ({u.Endpoint?.EndpointName})";
+            u.DisplayLocation = UrlDisplayLocation.DetailsOnly;
+        });
+
+        var ep = c.GetEndpoint("http");
+        c.Urls.Add(new ResourceUrlAnnotation() { Url = $"{ep.Url}/scalar", DisplayText = "Test API", DisplayLocation=UrlDisplayLocation.SummaryAndDetails });
+    });
+apiService.WithUrlForEndpoint("https", ep => new() { Url = $"{ep.Url}/scalar", DisplayText = "Try API", DisplayLocation = UrlDisplayLocation.SummaryAndDetails });
+
+
+
 builder.AddProject<Projects.AspireCustomResource_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")

@@ -7,7 +7,7 @@ using Azure.Provisioning.Storage;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var storage = builder.AddAzureStorage("storage")
+var storage = builder.AddAzureStorage("storage");
   
 bool useCloudResources = false;
 if (useCloudResources)

@@ -2,9 +2,11 @@
 
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddOpenApi();
 builder.AddServiceDefaults();
 var redisConn = builder.Configuration.GetConnectionString("cache");
 builder.Services.AddHealthChecks().AddRedis(redisConn!);
@@ -18,6 +20,13 @@ builder.Services.AddHttpClient<ExampleApiClient>(client =>
 
 // Build the main app (API endpoints)
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
 
 string[] summaries = ["Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"];
 
