@@ -6,61 +6,10 @@ using static System.Net.WebRequestMethods;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var nonSecretParameter = builder.AddParameter("non-secret-parameter", secret: false);
-
-var parameter = builder.AddParameter("example-parameter-name", secret: true);
-#pragma warning disable ASPIREINTERACTION001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-var externalServiceUrl = builder.AddParameter("external-service-url")
-    .WithDescription("The URL of the external service.")
-    .WithCustomInput(p => new()
-    {
-        InputType = InputType.Choice,
-        Options =  [new("https://www.nuget.org/", "https://www.nuget.org/"), new("https://www.bing.com/", "https://www.bing.com/")],        
-        Name = p.Name,
-        Placeholder = $"Enter value for {p.Name}",
-        Description = p.Description
-    });
-var externalService = builder.AddExternalService("external-service", externalServiceUrl)
-    .WithHttpHealthCheck(path: "/", statusCode: 200);
-#pragma warning restore ASPIREINTERACTION001
-
-var externalService2 = builder.AddExternalService("external-service2", externalServiceUrl)
-    .WithUrl("https://www.github.com/")
-    .WithUrl("https://www.stackoverflow.com/");
-
-
-var redis = builder.AddConnectionString("redis");
-
-#pragma warning disable ASPIREINTERACTION001
 #pragma warning disable ASPIRECERTIFICATES001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 var cache = builder.AddRedis("cache")
-    .WithoutHttpsCertificate()
-    .WithCommand("clear-cache", "Clear Cache",
-        async context => {
-            var interactionService = context.ServiceProvider.GetRequiredService<IInteractionService>();
-            if (interactionService.IsAvailable)
-            {
-                var result = await interactionService.PromptConfirmationAsync(
-                    title: "Clear confirmation",
-                    message: "Are you sure you want to delete the data?");
-
-                if (result.Data)
-                {
-                    // Run your resource/command logic.
-                }
-            }
-            return new ExecuteCommandResult { Success = true, ErrorMessage = "" };
-           },
-        commandOptions: new CommandOptions
-        {
-            UpdateState = updateCtx=>ResourceCommandState.Enabled,
-            IconName = "AnimalRabbitOff", // Specify the icon name
-            IconVariant = IconVariant.Filled // Specify the icon variant
-        });
+    .WithoutHttpsCertificate()    ;
 #pragma warning restore ASPIRECERTIFICATES001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-
-
-
 
 
 var devProxy = builder.AddMicrosoftDevProxy(
@@ -96,40 +45,13 @@ var example = devProxy.AddUrlMock("example",
 var apiService = builder.AddProject<Projects.AspireCustomResource_ApiService>("apiservice")
     .WithReference(cache)
     .WaitFor(cache)
-    .WithReference(redis)
-    .WithHttpHealthCheck("/health")
-    // Create an additional endpoint named "admin"
-    // - port: null => host/proxy port allocated dynamically
-    // - targetPort: null => service listening port allocated dynamically and injected to ADMIN_PORT
-    .WithEndpoint(
-        name: "admin",
-        scheme: "http",
-        env: "ADMIN_PORT",
-        port: null,
-        targetPort: null,
-        isProxied: true,
-        isExternal: true)
+    .WithHttpHealthCheck("/health")   
     .WaitFor(devProxy)
     .WithReference(example)
     .WithReference(devProxy)
-    .WithDevProxy(devProxy) ; 
-
-apiService.WithUrl($"{apiService.Resource.GetEndpoint("https")}/scalar", "Scalar");
-apiService
-    .WithUrls(c => 
-    {
-        c.Urls.ForEach(u => 
-        {   
-            u.DisplayText = $"API - ({u.Endpoint?.EndpointName})";
-            u.DisplayLocation = UrlDisplayLocation.DetailsOnly;
-        });
-
-        var ep = c.GetEndpoint("http");
-        c.Urls.Add(new ResourceUrlAnnotation() { Url = $"{ep.Url}/scalar", DisplayText = "Test API", DisplayLocation=UrlDisplayLocation.SummaryAndDetails });
-    });
-apiService.WithUrlForEndpoint("https", ep => new() { Url = $"{ep.Url}/scalar", DisplayText = "Try API", DisplayLocation = UrlDisplayLocation.SummaryAndDetails });
-
-
+    .WithDevProxy(devProxy)
+    .WithUrlForEndpoint("https", ep => new() { Url = $"{ep.Url}/example-data", DisplayText = "example.com", DisplayLocation = UrlDisplayLocation.SummaryAndDetails })
+    .WithUrlForEndpoint("https", ep => new() { Url = $"{ep.Url}/example-data?fail=true", DisplayText = "failing example.com", DisplayLocation = UrlDisplayLocation.SummaryAndDetails });
 
 builder.AddProject<Projects.AspireCustomResource_Web>("webfrontend")
     .WithExternalHttpEndpoints()
@@ -138,7 +60,6 @@ builder.AddProject<Projects.AspireCustomResource_Web>("webfrontend")
     .WaitFor(cache)
     .WithReference(apiService)
     .WaitFor(apiService)
-    .WithReference(externalService2)
     .WithReference(devProxy);
 
 builder.Build().Run();
