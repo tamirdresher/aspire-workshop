@@ -12,6 +12,6 @@ var storage = builder.AddBicepTemplate(
 builder.AddCSharpApp("api", "./../../Services/AspireCustomResource.ApiService/")
        .WithEnvironment("ConnectionStrings__storage", storage.GetOutput("connectionString"));
 
-
+Aspire.Hosting.Azure.AzureBicepResource
 
 builder.Build().Run();

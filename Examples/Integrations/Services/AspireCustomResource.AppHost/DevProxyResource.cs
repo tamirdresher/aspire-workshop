@@ -191,22 +191,22 @@ public static class DevProxyHostingExtensions
         return mocks;
     }
 
-    private static HashSet<string> CollectUrlsToWatch(DevProxyResource devProxy, DevProxyOptions options)
+private static HashSet<string> CollectUrlsToWatch(DevProxyResource devProxy, DevProxyOptions options)
+{
+    var urlsToWatch = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var u in options.UrlsToWatch)
     {
-        var urlsToWatch = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var u in options.UrlsToWatch)
-        {
-            if (!string.IsNullOrWhiteSpace(u)) urlsToWatch.Add(u.Trim());
-        }
-
-        foreach (var ann in devProxy.Annotations.OfType<DevProxyUrlToWatchAnnotation>())
-        {
-            if (!string.IsNullOrWhiteSpace(ann.Url)) urlsToWatch.Add(ann.Url.Trim());
-        }
-
-        return urlsToWatch;
+        if (!string.IsNullOrWhiteSpace(u)) urlsToWatch.Add(u.Trim());
     }
+
+    foreach (var ann in devProxy.Annotations.OfType<DevProxyUrlToWatchAnnotation>())
+    {
+        if (!string.IsNullOrWhiteSpace(ann.Url)) urlsToWatch.Add(ann.Url.Trim());
+    }
+
+    return urlsToWatch;
+}
 
     private static DevProxyConfiguration LoadBaseConfig(string baseConfigFile, string workDir)
     {

@@ -9,7 +9,7 @@ var cache = builder.AddResource(new EmptyResource("dummy"))
     .WithEndpoint("http", (ep)=>{})
     .WithEnvironment("key","value");
 
-cache.Resource.Annotations.ToList().ForEach(ann => Console.WriteLine(ann.ToString()));
+cache.Resource.Annotations.ToList().ForEach(ann => Console.WriteLine($"\x1b[38;2;255;100;0m{ann.ToString()}\x1b[0m")); //write in orange
 
 cache.WithEnvironment( envCallbackCtx =>
 {
