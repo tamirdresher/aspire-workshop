@@ -38,7 +38,7 @@ Learn how to add Aspire to an existing application, set up service defaults, cre
 - Publish mode - publishers and resource customizations
 - Custom commands and URL customizations
 
-**[📖 Continue with Lesson 2: Integrations and Cloud Services](#)** _(Coming soon)_
+**[📖 Continue with Lesson 2: Integrations and Cloud Services](Exercise/workshop/Lesson-02/README.md)** 
 
 ---
 
