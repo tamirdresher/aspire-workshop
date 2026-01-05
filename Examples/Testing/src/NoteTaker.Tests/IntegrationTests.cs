@@ -1,9 +1,11 @@
+using Aspire.Hosting;
+using Aspire.Hosting.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Aspire.Hosting;
-using Aspire.Hosting.Testing;
-
 namespace NoteTaker.Tests;
 
 /// <summary>
@@ -18,13 +20,37 @@ public class IntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        var cancellationToken = CancellationToken.None;
+
         // Create a test application builder - this spins up the entire distributed app
         var appHost = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.NoteTaker_AppHost>();
+            .CreateAsync<Projects.NoteTaker_AppHost>(cancellationToken);
 
-        // Build and start the application with all its dependencies
-        _app = await appHost.BuildAsync();
-        await _app.StartAsync();
+        appHost.Services.AddLogging(logging =>
+        {
+            logging.AddConsole(); // Outputs logs to console
+            logging.SetMinimumLevel(LogLevel.Debug);
+            // Override the logging filters from the app's configuration
+            logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
+            logging.AddFilter("Aspire.", LogLevel.Warning);
+            logging.AddFilter($"{appHost.Environment.ApplicationName}.Resources.aspire-dashboard", LogLevel.Debug);
+        });
+
+        appHost.Configuration.AddInMemoryCollection([
+            new("AppHost:BrowserToken", "") //disabling the dashboard token
+        ]);
+
+        _app = await appHost.BuildAsync(cancellationToken);
+        await _app.StartAsync(cancellationToken);
+
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("aspire-dashboard", cancellationToken);
+
+        // Wait for resources to be healthy
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("db", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("cache", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("messaging", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("backend", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("ai-service", cancellationToken);
 
         // Get HTTP client for the backend service
         _httpClient = _app.CreateHttpClient("backend");
@@ -242,10 +268,10 @@ public class IntegrationTests : IAsyncLifetime
         responses.Should().AllSatisfy(r => r.StatusCode.Should().Be(HttpStatusCode.Created));
 
         // Verify all tasks are in the database
-        var getResponse = await _httpClient!.GetAsync("/api/tasks");
-        var result = await getResponse.Content.ReadFromJsonAsync<TaskListResponse>();
+        var getResponse = await _httpClient!.GetAsync("/api/tasks", CancellationToken.None);
+        var result = await getResponse.Content.ReadFromJsonAsync<TaskListResponse>(CancellationToken.None);
         
-        result!.Tasks.Count.Should().BeGreaterOrEqualTo(5);
+        result!.Tasks.Count.Should().BeGreaterThanOrEqualTo(5);
     }
 }
 

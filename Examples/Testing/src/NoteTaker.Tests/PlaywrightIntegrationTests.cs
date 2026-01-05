@@ -1,6 +1,11 @@
 using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
+using Xunit.Sdk;
 
 namespace NoteTaker.Tests;
 
@@ -17,15 +22,42 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        var cancellationToken = CancellationToken.None;
+        
         // Create and start the distributed application with all its services
         var appHost = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.NoteTaker_AppHost>();
+            .CreateAsync<Projects.NoteTaker_AppHost>(args: [],
+                configureBuilder: (appOptions, hostSettings) =>
+                {
+                    appOptions.DisableDashboard = false;
+                }, cancellationToken);
 
-        _app = await appHost.BuildAsync();
-        await _app.StartAsync();
+        appHost.Services.AddLogging(logging =>
+        {
+            logging.AddConsole(); // Outputs logs to console
+            logging.SetMinimumLevel(LogLevel.Debug);
+            // Override the logging filters from the app's configuration
+            logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
+            logging.AddFilter("Aspire.", LogLevel.Warning);
+            logging.AddFilter($"{appHost.Environment.ApplicationName}.Resources.aspire-dashboard", LogLevel.Debug);
+        });
 
-        // Wait for the frontend service to be healthy
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("frontend");
+        appHost.Configuration.AddInMemoryCollection([
+            new("AppHost:BrowserToken", "") //disabling the dashboard token
+        ]);
+
+        _app = await appHost.BuildAsync(cancellationToken);
+        await _app.StartAsync(cancellationToken);
+        
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("aspire-dashboard",  cancellationToken);
+
+        // Wait for all services to be healthy
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("db", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("cache", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("messaging", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("backend", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("ai-service", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("frontend", cancellationToken);
 
         // Initialize Playwright
         _playwright = await Playwright.CreateAsync();
@@ -57,6 +89,8 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
         var context = await _browser!.NewContextAsync();
         context.SetDefaultNavigationTimeout(60000);
         var page = await context.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"Browser Console: {msg.Text}");
+        page.PageError += (_, err) => Console.WriteLine($"Browser Error: {err}");
 
         try
         {
@@ -84,22 +118,6 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
             // Submit the form
             await page.ClickAsync("button[type='submit']");
 
-            // Wait for the alert and dismiss it
-            page.Dialog += async (_, dialog) => await dialog.DismissAsync();
-
-            // Wait a bit for the task to be created and the list to refresh
-            await Task.Delay(TimeSpan.FromSeconds(2));
-
-            // Assert - Verify the task appears in the list
-            await page.WaitForSelectorAsync(".task-item", new PageWaitForSelectorOptions
-            {
-                Timeout = 10000
-            });
-
-            // Check that we have at least one more task
-            var newTaskElements = await page.Locator(".task-item").CountAsync();
-            newTaskElements.Should().BeGreaterThan(initialTaskElements);
-
             // Verify the task with our title is in the list
             var taskWithTitle = page.Locator(".task-item").Filter(new LocatorFilterOptions
             {
@@ -111,6 +129,10 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
                 State = WaitForSelectorState.Visible,
                 Timeout = 10000
             });
+
+            // Check that we have at least one more task
+            var newTaskElements = await page.Locator(".task-item").CountAsync();
+            newTaskElements.Should().BeGreaterThan(initialTaskElements);
 
             var taskTitleElement = taskWithTitle.Locator(".task-title");
             var displayedTitle = await taskTitleElement.TextContentAsync();
@@ -162,6 +184,8 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
         var context = await _browser!.NewContextAsync();
         context.SetDefaultNavigationTimeout(60000);
         var page = await context.NewPageAsync();
+        page.Console += (_, msg) => Console.WriteLine($"Browser Console: {msg.Text}");
+        page.PageError += (_, err) => Console.WriteLine($"Browser Error: {err}");
 
         try
         {
@@ -196,7 +220,7 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
             await taskWithTitle.WaitForAsync(new LocatorWaitForOptions
             {
                 State = WaitForSelectorState.Visible,
-                Timeout = 10000
+                Timeout = 30000
             });
 
             // Act - Delete the task

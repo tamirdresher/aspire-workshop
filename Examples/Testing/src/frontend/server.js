@@ -22,8 +22,10 @@ const port = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/config', (req, res) => {
+  console.log('Config requested. Backend URL env var:', process.env.services__backend__http__0);
+  console.log('All services env vars:', Object.keys(process.env).filter(k => k.startsWith('services__')));
   res.json({
-    apiUrl: process.env.services__backend__http__0 + '/api'
+    apiUrl: (process.env.services__backend__http__0 || '') + '/api'
   });
 });
 

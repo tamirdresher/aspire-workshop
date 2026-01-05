@@ -7,14 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
-    <PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
-    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.0.2" />
-    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.0.2" />
-    <PackageReference Include="Aspire.RabbitMQ.Client" Version="13.0.2" />
+    <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.2.0" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
+    <PackageReference Include="Aspire.StackExchange.Redis" Version="13.1.0" />
+    <PackageReference Include="Aspire.RabbitMQ.Client" Version="13.1.0" />
   </ItemGroup>
 
   <ItemGroup>

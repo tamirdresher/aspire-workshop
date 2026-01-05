@@ -308,11 +308,16 @@
 
         // Load tasks on page load
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOM Content Loaded');
             try {
+                console.log('Fetching config...');
                 const configResponse = await fetch('/config');
+                console.log('Config response status:', configResponse.status);
                 const config = await configResponse.json();
+                console.log('Config received:', config);
                 if (config.apiUrl) {
                     API_URL = config.apiUrl;
+                    console.log('API_URL set to:', API_URL);
                 }
             } catch (e) {
                 console.error('Failed to load config, using default API URL', e);
@@ -340,25 +345,30 @@
                 
                 if (response.ok) {
                     document.getElementById('taskForm').reset();
-                    loadTasks();
-                    alert('✓ Task created successfully! AI analysis will be available shortly.');
+                    await loadTasks();
+                    console.log('Task created successfully');
                 } else {
-                    alert('✗ Failed to create task');
+                    console.error('Failed to create task');
                 }
             } catch (error) {
                 console.error('Error creating task:', error);
-                alert('✗ Error creating task. Make sure the backend is running.');
             }
         });
 
         // Load all tasks
         async function loadTasks() {
+            console.log(`Loading tasks from ${API_URL}/tasks...`);
             const taskList = document.getElementById('taskList');
             const cacheIndicator = document.getElementById('cacheIndicator');
             
             try {
                 const response = await fetch(`${API_URL}/tasks`);
+                console.log('Tasks response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
+                console.log('Tasks loaded:', data);
                 
                 const tasks = data.tasks || [];
                 const source = data.source || 'unknown';

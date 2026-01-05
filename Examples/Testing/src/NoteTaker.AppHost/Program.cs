@@ -15,7 +15,10 @@ Console.WriteLine($"  ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL: {builder.Configurati
 Console.WriteLine($"  ASPIRE_DASHBOARD_MCP_ENDPOINT_URL: {builder.Configuration["ASPIRE_DASHBOARD_MCP_ENDPOINT_URL"] ?? "(not set)"}");
 Console.WriteLine($"  ASPIRE_ALLOW_UNSECURED_TRANSPORT: {builder.Configuration["ASPIRE_ALLOW_UNSECURED_TRANSPORT"] ?? "(not set)"}");
 
-var cache = builder.AddRedis("cache");
+#pragma warning disable ASPIRECERTIFICATES001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+var cache = builder.AddRedis("cache")
+    .WithoutHttpsCertificate()    ;
+#pragma warning restore ASPIRECERTIFICATES001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
 
 var db = builder.AddPostgres("db")
     .AddDatabase("notetakerdb");
@@ -24,14 +27,19 @@ var messaging = builder.AddRabbitMQ("messaging");
 
 var backend = builder.AddProject<Projects.Backend>("backend")
     .WithReference(cache)
+    .WaitFor(cache)
     .WithReference(db)
+    .WaitFor(db)
     .WithReference(messaging)
+    .WaitFor(messaging)
     .WithHttpEndpoint(name: "http")
     .WithExternalHttpEndpoints();
 
 var aiService = builder.AddPythonApp("ai-service", "../ai-service", "main.py")
     .WithReference(db)
+    .WaitFor(db)
     .WithReference(messaging)
+    .WaitFor(messaging)
     .WithEnvironment("RABBITMQ_HOST", "messaging")
     .WithEnvironment("POSTGRES_HOST", "db")
     .WithHttpEndpoint(env: "PORT", name: "http")
@@ -40,6 +48,7 @@ var aiService = builder.AddPythonApp("ai-service", "../ai-service", "main.py")
 builder.AddJavaScriptApp("frontend", "../frontend")
     .WithRunScript("start")
     .WithReference(backend)
+    .WaitFor(backend)
     .WithReference(aiService.GetEndpoint("http"))
     .WithHttpEndpoint(env: "PORT")
     .WithExternalHttpEndpoints();

@@ -131,7 +131,12 @@ app.MapGet("/api/tasks", async (AppDbContext db, RedisCacheService cache) =>
     var tasks = await db.Tasks.OrderByDescending(t => t.CreatedAt).ToListAsync();
     
     // Cache the results
-    await cache.SetAsync(cacheKey, tasks, TimeSpan.FromSeconds(60));
+    // Only cache non-empty lists to avoid race conditions where a stale empty list
+    // overwrites a newly created task in the cache
+    if (tasks.Count > 0)
+    {
+        await cache.SetAsync(cacheKey, tasks, TimeSpan.FromSeconds(60));
+    }
     
     return Results.Ok(new { source = "database", tasks });
 })

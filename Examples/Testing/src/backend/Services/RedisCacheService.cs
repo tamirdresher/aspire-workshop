@@ -20,9 +20,13 @@ public class RedisCacheService
     {
         try
         {
-            var value = await _db.StringGetAsync(key);
+            _logger.LogInformation("Getting key {Key} from Redis", key);
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            var value = await _db.StringGetAsync(key).WaitAsync(cts.Token);
+            
             if (value.IsNullOrEmpty)
             {
+                _logger.LogInformation("Key {Key} not found in Redis", key);
                 return default;
             }
             return JsonSerializer.Deserialize<T>(value.ToString());
