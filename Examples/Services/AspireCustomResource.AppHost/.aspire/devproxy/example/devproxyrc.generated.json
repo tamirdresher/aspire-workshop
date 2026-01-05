@@ -1,0 +1,17 @@
+﻿{
+  "urlsToWatch": [
+    "https://jsonplaceholder.typicode.com/*",
+    "http://example.com/*"
+  ],
+  "plugins": [
+    {
+      "name": "MockResponsePlugin",
+      "enabled": true,
+      "pluginPath": "~appFolder/plugins/DevProxy.Plugins.dll",
+      "configSection": "mocksPlugin"
+    }
+  ],
+  "mocksPlugin": {
+    "mocksFile": "C:\\Users\\tamirdresher\\source\\repos\\aspire-workshop\\Examples\\AspireCustomResource\\AspireCustomResource.AppHost\\.aspire\\devproxy\\example\\mocks.json"
+  }
+}

@@ -1,0 +1,200 @@
+@page "/cart"
+@using Bookstore.Shared
+@using Bookstore.Web.Clients
+@inject BookstoreClient BookstoreClient
+@inject NavigationManager Navigation
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+
+<PageTitle>Shopping Cart</PageTitle>
+
+<div class="container">
+    <h1 class="mb-4">Shopping Cart</h1>
+
+    @if (cart == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading cart...</p>
+        </div>
+    }
+    else if (cart.Items.Count == 0)
+    {
+        <div class="alert alert-info text-center">
+            <h4>Your cart is empty</h4>
+            <p>Browse our collection and add some books!</p>
+            <a href="/" class="btn btn-primary">Continue Shopping</a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        @foreach (var item in cart.Items)
+                        {
+                            <div class="row align-items-center mb-3 pb-3 border-bottom">
+                                <div class="col-md-2">
+                                    <img src="@item.Book?.ImageUrl" class="img-fluid" alt="@item.Book?.Title">
+                                </div>
+                                <div class="col-md-4">
+                                    <h5>@item.Book?.Title</h5>
+                                    <p class="text-muted mb-0">by @item.Book?.Author</p>
+                                </div>
+                                <div class="col-md-2">
+                                    <span class="fw-bold">@item.Book?.Price.ToString("C")</span>
+                                </div>
+                                <div class="col-md-2">
+                                    <span class="badge bg-secondary">Qty: @item.Quantity</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <div class="d-flex flex-column gap-2">
+                                        <span class="fw-bold text-primary">@item.TotalPrice.ToString("C")</span>
+                                        <button class="btn btn-sm btn-danger" @onclick="() => RemoveFromCart(item.BookId)">
+                                            <i class="bi bi-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Items:</span>
+                            <span class="fw-bold">@cart.TotalItems</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <span>Subtotal:</span>
+                            <span class="fw-bold">@cart.TotalAmount.ToString("C")</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <h5>Total:</h5>
+                            <h5 class="text-primary">@cart.TotalAmount.ToString("C")</h5>
+                        </div>
+                        
+                        @if (showCheckoutForm)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Name</label>
+                                <input type="text" class="form-control" @bind="customerName" placeholder="Enter your name">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" @bind="customerEmail" placeholder="Enter your email">
+                            </div>
+                            <button class="btn btn-success w-100 mb-2" @onclick="CompleteCheckout" disabled="@isProcessing">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <text>Processing...</text>
+                                }
+                                else
+                                {
+                                    <text><i class="bi bi-check-circle"></i> Complete Order</text>
+                                }
+                            </button>
+                            <button class="btn btn-outline-secondary w-100" @onclick="() => showCheckoutForm = false">
+                                Cancel
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-success w-100 mb-2" @onclick="() => showCheckoutForm = true">
+                                <i class="bi bi-credit-card"></i> Proceed to Checkout
+                            </button>
+                            <a href="/" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-arrow-left"></i> Continue Shopping
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showSuccessMessage)
+    {
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-success text-white">
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => showSuccessMessage = false"></button>
+                </div>
+                <div class="toast-body">
+                    @successMessage
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private Bookstore.Shared.Cart? cart;
+    private bool showCheckoutForm;
+    private bool showSuccessMessage;
+    private bool isProcessing;
+    private string successMessage = "";
+    private string customerName = "";
+    private string customerEmail = "";
+    private string cartId = "default-cart";
+
+    protected override async Task OnInitializedAsync()
+    {
+        cart = await BookstoreClient.GetCartAsync(cartId);
+    }
+
+    private async Task RemoveFromCart(string bookId)
+    {
+        cart = await BookstoreClient.RemoveFromCartAsync(cartId, bookId);
+        successMessage = "Item removed from cart";
+        showSuccessMessage = true;
+        StateHasChanged();
+        await Task.Delay(3000);
+        showSuccessMessage = false;
+        StateHasChanged();
+    }
+
+    private async Task CompleteCheckout()
+    {
+        if (string.IsNullOrWhiteSpace(customerName) || string.IsNullOrWhiteSpace(customerEmail))
+        {
+            successMessage = "Please fill in all fields";
+            showSuccessMessage = true;
+            await Task.Delay(3000);
+            showSuccessMessage = false;
+            return;
+        }
+
+        isProcessing = true;
+        StateHasChanged();
+
+        var order = new Order
+        {
+            Items = cart?.Items ?? new List<CartItem>(),
+            CustomerName = customerName,
+            CustomerEmail = customerEmail,
+            TotalAmount = cart?.TotalAmount ?? 0
+        };
+
+        await BookstoreClient.CreateOrderAsync(order);
+        await BookstoreClient.ClearCartAsync(cartId);
+
+        isProcessing = false;
+        showCheckoutForm = false;
+        
+        // Redirect to home with success message
+        Navigation.NavigateTo("/order-success");
+    }
+}
