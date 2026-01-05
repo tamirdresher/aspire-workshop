@@ -1,11 +1,15 @@
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
+using Meziantou.Extensions.Logging.Xunit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Aspire.Hosting.ApplicationModel;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 namespace NoteTaker.Tests;
 
 /// <summary>
@@ -13,7 +17,7 @@ namespace NoteTaker.Tests;
 /// These tests spin up actual PostgreSQL, Redis, and RabbitMQ containers.
 /// </summary>
 [Collection("Sequential")]
-public class IntegrationTests : IAsyncLifetime
+public class IntegrationTests(ITestOutputHelper testOutputHelper) : IAsyncLifetime
 {
     private DistributedApplication? _app;
     private HttpClient? _httpClient;
@@ -24,7 +28,13 @@ public class IntegrationTests : IAsyncLifetime
 
         // Create a test application builder - this spins up the entire distributed app
         var appHost = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.NoteTaker_AppHost>(cancellationToken);
+            .CreateAsync<Projects.NoteTaker_AppHost>(args: [],
+                configureBuilder: (appOptions, hostSettings) =>
+                {
+                    appOptions.DisableDashboard = false;
+                }, cancellationToken);
+
+        appHost.Services.AddSingleton<ILoggerProvider>(new XUnitLoggerProvider(testOutputHelper, appendScope: false));
 
         appHost.Services.AddLogging(logging =>
         {
@@ -39,6 +49,10 @@ public class IntegrationTests : IAsyncLifetime
         appHost.Configuration.AddInMemoryCollection([
             new("AppHost:BrowserToken", "") //disabling the dashboard token
         ]);
+
+        // You can change the resource configuration if needed, like here:
+        var redis = appHost.CreateResourceBuilder<RedisResource>("cache");
+        redis.WithUrl("https://www.google.com", "CustomUrl");
 
         _app = await appHost.BuildAsync(cancellationToken);
         await _app.StartAsync(cancellationToken);

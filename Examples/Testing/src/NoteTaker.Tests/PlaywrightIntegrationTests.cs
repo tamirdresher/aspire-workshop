@@ -51,6 +51,9 @@ public class PlaywrightIntegrationTests(ITestOutputHelper testOutputHelper) : IA
             new("AppHost:BrowserToken", "") //disabling the dashboard token
         ]);
 
+        var redis = appHost.CreateResourceBuilder<RedisResource>("cache");
+        redis.WithUrl("https://www.google.com", "CustomUrl");
+
         _app = await appHost.BuildAsync(cancellationToken);
         await _app.StartAsync(cancellationToken);
         
