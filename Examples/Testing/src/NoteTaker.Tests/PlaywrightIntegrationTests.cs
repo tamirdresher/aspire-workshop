@@ -1,11 +1,12 @@
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
 using Aspire.Hosting.Testing;
+using Meziantou.Extensions.Logging.Xunit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Playwright;
-using Xunit.Sdk;
+using Xunit.Abstractions;
 
 namespace NoteTaker.Tests;
 
@@ -14,7 +15,7 @@ namespace NoteTaker.Tests;
 /// Tests spin up the entire distributed application including frontend, backend, and all dependencies.
 /// </summary>
 [Collection("Sequential")]
-public class PlaywrightIntegrationTests : IAsyncLifetime
+public class PlaywrightIntegrationTests(ITestOutputHelper testOutputHelper) : IAsyncLifetime
 {
     private DistributedApplication? _app;
     private IPlaywright? _playwright;
@@ -31,11 +32,15 @@ public class PlaywrightIntegrationTests : IAsyncLifetime
                 {
                     appOptions.DisableDashboard = false;
                 }, cancellationToken);
-
+        
+        appHost.Services.AddSingleton<ILoggerProvider>(new XUnitLoggerProvider(testOutputHelper, appendScope: false));
+        
         appHost.Services.AddLogging(logging =>
         {
-            logging.AddConsole(); // Outputs logs to console
             logging.SetMinimumLevel(LogLevel.Debug);
+
+            logging.AddConsole(); // Outputs logs to console
+            
             // Override the logging filters from the app's configuration
             logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
             logging.AddFilter("Aspire.", LogLevel.Warning);
