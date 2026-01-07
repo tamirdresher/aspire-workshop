@@ -168,7 +168,7 @@ dotnet build start/Bookstore.sln
 
 You can now run both projects and test the health endpoints:
 - API: `https://localhost:7032/health`
-- Web: `https://localhost:7274/health`
+- Web: `https://localhost:7265/health`
 
 You should see output like `Healthy` indicating the health checks are working!
 
