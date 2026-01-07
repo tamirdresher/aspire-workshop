@@ -129,15 +129,14 @@ Publishing and deployment examples:
 
 2. **Install .NET Aspire workload**:
    ```bash
-   dotnet workload update
-   dotnet workload install aspire
+   dotnet new install Aspire.ProjectTemplates
    ```
 
 3. **Verify installation**:
    ```bash
-   dotnet workload list
+   dotnet new list
    ```
-   You should see `aspire` in the installed workloads list.
+   You should see `aspire` in the installed templates list.
 
 ### Running the Workshop
 
