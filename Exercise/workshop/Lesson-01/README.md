@@ -218,7 +218,7 @@ The AppHost needs references to the projects it will orchestrate.
 
 #### Visual Studio/VS Code
 
-Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Add` > `Reference` → Check both `Bookstore.API` and `Bookstore.Web` → Click `OK`
+Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Add` > `Reference` → Check both `Bookstore.API`, `Bookstore.Web` and `Bookstore.Worker` → Click `OK`
 
 > **Pro Tip**: In Visual Studio 2022, you can drag and drop projects onto the AppHost project to add references.
 
@@ -226,6 +226,7 @@ Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppH
 
 ```bash
 dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj reference start/Bookstore.API/Bookstore.API.csproj
+dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj reference start/Bookstore.Worker/Bookstore.Worker.csproj
 dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj reference start/Bookstore.Web/Bookstore.Web/Bookstore.Web.csproj
 ```
 
@@ -233,7 +234,7 @@ When these references are added, helper classes are automatically generated to h
 
 ### Orchestrate the Application
 
-Open [`Bookstore.AppHost/Program.cs`](./code/Bookstore.AppHost/Program.cs) and add your projects to the app model:
+Open [`Bookstore.AppHost/Program.cs`](./code/Bookstore.AppHost/Program.cs) or (AppHost.cs) and add your projects to the app model:
 
 ```csharp
 var builder = DistributedApplication.CreateBuilder(args);
