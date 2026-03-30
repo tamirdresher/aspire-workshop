@@ -2,6 +2,8 @@
 
 A comprehensive 3-day workshop for building cloud-native, distributed applications using .NET Aspire.
 
+> **✨ Now Updated to Aspire 13.2** - This workshop has been upgraded to leverage the latest Aspire 13.2 features including enhanced CLI capabilities, improved dashboard functionality, and new TypeScript AppHost support.
+
 ## 📚 Workshop Overview
 
 This workshop teaches you how to build production-ready distributed applications using .NET Aspire - an opinionated, cloud-ready stack for building observable, production-ready distributed applications.
@@ -69,6 +71,11 @@ Advanced AppHost customization techniques:
 - **[Pipelines](Examples/Customizations/AppHosts/Pipelines/)** - Resource processing pipelines
 - **[URL Customizations](Examples/Customizations/AppHosts/UrlCustomizations/)** - Custom URL configurations for the dashboard
 
+### 🌐 TypeScript AppHost ⭐ NEW in 13.2
+Write your orchestration in TypeScript:
+
+- **[TypeScript AppHost](Examples/TypeScriptAppHost/)** - Complete guide to TypeScript-based orchestration with auto-generated integration SDKs
+
 ### 🔌 Integrations
 Working with cloud services and emulators:
 
@@ -114,9 +121,9 @@ Publishing and deployment examples:
 
 - **.NET 10 SDK** or later - [Download](https://dotnet.microsoft.com/download)
 - **Visual Studio 2026**  or **Visual Studio Code** with C# Dev Kit
-- **Aspire CLI** 
+- **Aspire CLI 13.2+** - Install via: `curl -sSL https://aspire.dev/install.sh | bash` (Linux/macOS) or `irm https://aspire.dev/install.ps1 | iex` (Windows)
 - **Docker Desktop** (for container resources) - [Download](https://www.docker.com/products/docker-desktop)
-- **Node.js 18+** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
+- **Node.js 18+** and npm (for JavaScript/TypeScript examples) - [Download](https://nodejs.org/)
 - **Azure Subscription** (optional, for cloud deployment)
 
 ### Setup
@@ -127,16 +134,29 @@ Publishing and deployment examples:
    cd aspire-workshop
    ```
 
-2. **Install .NET Aspire workload**:
+2. **Install Aspire CLI** (if not already installed):
    ```bash
-   dotnet new install Aspire.ProjectTemplates
+   # Windows (PowerShell)
+   irm https://aspire.dev/install.ps1 | iex
+   
+   # Linux/macOS
+   curl -sSL https://aspire.dev/install.sh | bash
    ```
 
 3. **Verify installation**:
    ```bash
-   dotnet new list
+   aspire --version
+   dotnet --version
    ```
-   You should see `aspire` in the installed templates list.
+   
+   You should see Aspire 13.2+ and .NET 10.0+
+
+4. **Run environment diagnostics** (optional but recommended):
+   ```bash
+   aspire doctor
+   ```
+   
+   This checks your HTTPS certificates, Docker/container runtime, .NET SDK, and more.
 
 ### Running the Workshop
 
@@ -170,6 +190,117 @@ dotnet test
 ```
 
 The Aspire Dashboard will open automatically at `http://localhost:15888` (or similar).
+
+---
+
+## 🆕 What's New in Aspire 13.2
+
+This workshop has been updated to showcase the latest features in Aspire 13.2:
+
+### 🛠️ Enhanced CLI Experience
+
+Aspire 13.2 brings powerful new CLI commands that expand what you can do from the terminal:
+
+**Detached Mode & Process Management:**
+```bash
+# Run apphost in background (frees up terminal)
+aspire run --detached
+# or
+aspire start
+
+# List all running apphosts
+aspire ps
+
+# Stop a running apphost
+aspire stop
+```
+
+**Resource Management:**
+```bash
+# Restart a specific resource
+aspire resource api restart
+
+# Rebuild a project resource
+aspire resource api rebuild
+```
+
+**Isolated Mode for Parallel Development:**
+```bash
+# Run with randomized ports and isolated secrets (great for testing)
+aspire run --isolated
+```
+
+**Resource Monitoring:**
+```bash
+# Inspect resource state, config, environment variables, health
+aspire describe
+
+# Continuously stream resource state changes
+aspire describe --follow
+```
+
+**Environment Diagnostics:**
+```bash
+# Check HTTPS certs, Docker, .NET SDK, WSL2, and more
+aspire doctor
+```
+
+**Documentation Access:**
+```bash
+# List all available documentation pages
+aspire docs list
+
+# Search for specific topics
+aspire docs search "redis"
+
+# Read a full documentation page
+aspire docs get redis-integration
+```
+
+**Enhanced Integration Management:**
+```bash
+# Fuzzy search for integrations
+aspire add redis
+
+# Restore integration packages/SDKs
+aspire restore
+```
+
+### 🎨 Dashboard Improvements
+
+- **Custom Commands** - Add operational workflows directly in the dashboard (see Examples/Customizations/AppHosts/Commands/)
+- **URL Customizations** - Rich endpoint annotations for API explorers (see Scalar integration examples)
+- **Improved Resource State Visualization** - Better health status and lifecycle indicators
+
+### 🌐 Multi-Language Support
+
+- **TypeScript AppHost Support** ⭐ - Write your AppHost in TypeScript with auto-generated integration SDKs
+- **Language-Specific Templates** - `aspire new` now scaffolds C#, TypeScript, Python starters
+- **Better Polyglot Orchestration** - Enhanced support for Node.js, Python, Go services
+
+### 📦 Configuration Management
+
+Aspire 13.2 introduces unified `aspire.config.json` replacing older split configuration:
+```json
+{
+  "appHost": {
+    "path": "AppHost/Program.cs",
+    "language": "csharp"
+  },
+  "sdk": {
+    "version": "13.2.0"
+  },
+  "channel": "stable"
+}
+```
+
+Legacy `.aspire/settings.json` files are auto-migrated on first run.
+
+### 🧪 Testing Enhancements
+
+- **Isolated Testing** - Run multiple test instances side-by-side with `--isolated` flag
+- **Resource Lifecycle Control** - Programmatic start/stop/restart for integration tests
+- **Enhanced Playwright Integration** - Better support for E2E testing (see Examples/Testing/)
 
 ---
 
