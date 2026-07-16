@@ -2,6 +2,7 @@
 
 > **PR-1 / Read-only audit.** No source files were changed.  
 > Generated: 2026-07-16  
+> **Upgrade scope: 13.1.0 → 13.4.6** (baseline confirmed by audit; original task assumed 13.2 but repo is on 13.1.0)  
 > Tracking issue: [tamirdresher_microsoft/tamresearch1#4774](https://github.com/tamirdresher_microsoft/tamresearch1/issues/4774)  
 > Linked PR: [#4](https://github.com/tamirdresher/aspire-workshop/pull/4)
 
@@ -176,12 +177,14 @@ $ git branch -a
 
 No partial upgrade work exists on a feature branch. All changes will start fresh from `main`.
 
+> **PR-3 (Picard's plan) is a no-op.** Picard's decomposition included a PR-3 to merge/cherry-pick the `aspire-13.2-upgrade` branch. Since that branch does not exist, PR-3 can be skipped entirely — there is nothing to merge. The upgrade proceeds directly from `main` in PR-2.
+
 ---
 
 ## 5. Recommendations for PR-2
 
 ### Target version
-Bump everything to **13.2.x** (the latest stable Aspire release at time of PR-2). Confirm target by checking NuGet for `Aspire.AppHost.Sdk` latest stable before starting.
+Bump everything to **13.4.6** (confirmed latest stable at time of this inventory). The original task assumed 13.2 as the baseline, but the audit found the repo is on 13.1.0 — the full upgrade span is therefore **13.1.0 → 13.4.6**, crossing two minor versions. See the Addendum (Section 6) for the 13.1 → 13.2 delta to watch for during the bump.
 
 ### Priority fixes for PR-2
 
@@ -203,6 +206,46 @@ There is **no `Directory.Packages.props`** (Central Package Management) in the r
 
 ### No existing `docs/` folder
 This file (`docs/aspire-upgrade-inventory.md`) is the first file in a new `docs/` directory.
+
+---
+
+## 6. Addendum: 13.1.0 → 13.2.0 Delta
+
+> Provided by Seven (Research & Docs). These are the changes that land between the workshop's current baseline (13.1.0) and the first intermediate target (13.2.0). PR-2 must account for all of them on the way to 13.4.6.
+
+### Breaking Changes (13.1 → 13.2)
+
+| Item | Change |
+|------|--------|
+| `AddAzureRedisEnterprise` | Renamed to `AddAzureManagedRedis` in 13.1 |
+| `aspire mcp server` | Renamed to `aspire agent server` in 13.2 |
+| `.aspire/settings.json` + `apphost.run.json` | Superseded by `aspire.config.json` in 13.2 (auto-migrated on first run) |
+| ACR implicit provisioning | Removed in 13.1 — explicit `AddContainerRegistry` now required |
+
+**Impact on this workshop:**
+- No `AddAzureRedisEnterprise` usage found in audit → no rename needed.
+- `apphost.run.json` files exist in Examples/Customizations and Examples/Integrations AppHosts (found during audit) → these will be auto-migrated to `aspire.config.json` when the CLI is upgraded; PR-2 should verify migration happens cleanly and update any README instructions that reference `apphost.run.json` by name.
+- No ACR/`AddContainerRegistry` usage found in audit → no explicit provisioning fix needed.
+
+### Key New in 13.1 (not in workshop baseline)
+
+- `aspire agent init` — AI agent + MCP server setup
+- Dashboard Parameters tab
+- `ContainerRegistryResource` + `WithContainerRegistry`
+- `Aspire.Hosting.DevTunnels` graduated stable
+
+**Workshop coverage gap:** None of these features are demonstrated in the current lesson material. Consider adding a bonus exercise or callout note in Lesson-03 for `aspire agent init`.
+
+### Key New in 13.2 (not in workshop baseline)
+
+- **Detached mode**: `aspire start` / `aspire stop` / `aspire ps` / `aspire describe` / `aspire wait` / `aspire export`
+- **New CLI commands**: `aspire doctor`, `aspire secret`, `aspire certs`, `aspire docs`, `aspire config`
+- **Workflow commands**: `aspire restore`, `aspire run --isolated`
+- **Unified config**: `aspire.config.json` replaces `.aspire/settings.json` + `apphost.run.json`
+- **Language-aware scaffolding**: `aspire new` / `aspire init` supports C#, TypeScript, Python
+- **VS Code Aspire panel**
+
+**Workshop coverage gap:** README.md currently documents only `aspire run`. PR-3 (docs update PR, separate from the version bump) should add a "What's new in 13.2" callout and update the README quick-start to use `aspire start` (detached mode) alongside `aspire run`.
 
 ---
 
