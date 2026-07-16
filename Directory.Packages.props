@@ -1,0 +1,82 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Individual projects use VersionOverride for the small number of packages that are
+         intentionally pinned to a different version than the rest of the repo (see the
+         "Known version overrides" section of PR-2's description for the full list and reasons). -->
+    <CentralPackageVersionOverrideEnabled>true</CentralPackageVersionOverrideEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Azure.Storage.Queues" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.CosmosDB" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.Docker" Version="13.1.0-preview.1.25616.3" />
+    <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.Python" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.1.0" />
+    <!-- Dominant version across the repo; NoteTaker.Tests overrides to 13.0.2 (see override note). -->
+    <PackageVersion Include="Aspire.Hosting.Testing" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Microsoft.Azure.Cosmos" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.Cosmos" Version="13.1.0" />
+    <PackageVersion Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
+    <PackageVersion Include="Aspire.RabbitMQ.Client" Version="13.1.0" />
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.1.0" />
+    <PackageVersion Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Health checks">
+    <PackageVersion Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Azure">
+    <PackageVersion Include="Azure.Provisioning.CosmosDB" Version="1.0.0" />
+    <PackageVersion Include="Azure.Provisioning.Storage" Version="1.1.2" />
+  </ItemGroup>
+
+  <ItemGroup Label="ASP.NET Core / EF Core / runtime">
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.1" />
+    <!-- Dominant version across the repo; Bookstore.API (start and Lesson-01) overrides to 10.0.0 (see override note). -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.1.0" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.11.10" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.10.1" />
+    <PackageVersion Include="RabbitMQ.Client" Version="7.2.0" />
+    <PackageVersion Include="KubernetesClient" Version="18.0.13" />
+  </ItemGroup>
+
+  <ItemGroup Label="OpenTelemetry">
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.14.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="FluentAssertions" Version="7.0.0" />
+    <PackageVersion Include="Meziantou.Extensions.Logging.Xunit" Version="1.0.22" />
+    <!-- Dominant version across the repo; NoteTaker.Tests overrides to 17.12.0 (see override note). -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.49.0" />
+    <!-- Dominant version across the repo; NoteTaker.Tests overrides to 2.9.2 / 2.8.2 (see override note). -->
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+</Project>
