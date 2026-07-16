@@ -2,7 +2,7 @@
 
 > **PR-1 / Read-only audit.** No source files were changed.  
 > Generated: 2026-07-16  
-> **Upgrade scope: 13.1.0 → 13.4.6** (baseline confirmed by audit; original task assumed 13.2 but repo is on 13.1.0)  
+> **Upgrade scope: 13.1.0 → latest stable** (baseline confirmed by audit; original task assumed 13.2 but repo is on 13.1.0; target is "latest and greatest" at implementation time per Tamir's decision — 13.4.6 was latest as of this inventory)  
 > Tracking issue: [tamirdresher_microsoft/tamresearch1#4774](https://github.com/tamirdresher_microsoft/tamresearch1/issues/4774)  
 > Linked PR: [#4](https://github.com/tamirdresher/aspire-workshop/pull/4)
 
@@ -165,26 +165,24 @@ All `settings.json` matches in the search are `launchSettings.json` schema refer
 
 ## 4. `aspire-13.2-upgrade` Branch Delta
 
-The branch `aspire-13.2-upgrade` **does not exist** in this repository.  
-Only `main` is present on the remote.
+The branch `aspire-13.2-upgrade` **exists** on the remote and contains partial, stale upgrade work: 2 commits ahead of `main`, 17 files changed (502 insertions, 43 deletions), including an `AGENTS.md` file not present on `main`.
 
 ```
-$ git branch -a
-* main
-  remotes/origin/HEAD -> origin/main
-  remotes/origin/main
+$ git log origin/main..origin/aspire-13.2-upgrade --oneline
+e5987f7 updates
+4d74cb3 Upgrade to Aspire 13.2 with new features
 ```
 
-No partial upgrade work exists on a feature branch. All changes will start fresh from `main`.
+Highlights of the changed files: version bumps in several `.csproj` files, a new `AGENTS.md`, `.aspire/settings.json` / `aspire.config.json` and `apphost.run.json`-related changes, an `apphost.cs` rewrite, a new `Examples/TypeScriptAppHost/README.md`, and `README.md` updates.
 
-> **PR-3 (Picard's plan) is a no-op.** Picard's decomposition included a PR-3 to merge/cherry-pick the `aspire-13.2-upgrade` branch. Since that branch does not exist, PR-3 can be skipped entirely — there is nothing to merge. The upgrade proceeds directly from `main` in PR-2.
+> **PR-3 (Picard's plan) is not a no-op.** The branch is a real, partial start on the 13.2 upgrade — it is **stale**, not absent and not complete. It targets 13.2 specifically and predates the confirmed 13.1.0 baseline and later Aspire releases found by this audit, so it cannot be merged as-is. PR-2 (or a dedicated review step) should diff `aspire-13.2-upgrade` against current `main`, cherry-pick any content that is still useful (e.g. the `AGENTS.md` scaffold, the `TypeScriptAppHost` README), and re-validate everything against whatever Aspire version is actually latest at implementation time — not treat the branch as a ready-made or authoritative source.
 
 ---
 
 ## 5. Recommendations for PR-2
 
 ### Target version
-Bump everything to **13.4.6** (confirmed latest stable at time of this inventory). The original task assumed 13.2 as the baseline, but the audit found the repo is on 13.1.0 — the full upgrade span is therefore **13.1.0 → 13.4.6**, crossing two minor versions. See the Addendum (Section 6) for the 13.1 → 13.2 delta to watch for during the bump.
+Per Tamir's decision, target **the latest stable Aspire release available at implementation time** ("latest and greatest") — not a version pinned in advance. `13.4.6` was the latest stable at the time of this inventory (2026-07-16) and can be used as a working placeholder, but PR-2 must re-check for a newer stable release immediately before implementing and bump to that if one has shipped. The original task assumed 13.2 as the baseline, but the audit found the repo is on 13.1.0 — the full upgrade span is therefore **13.1.0 → latest**, crossing at least two minor versions. See the Addendum (Section 6) for the 13.1 → 13.2 delta to watch for during the bump, and Section 4 for stale content on the `aspire-13.2-upgrade` branch that should be reviewed against the actual latest version, not assumed current.
 
 ### Priority fixes for PR-2
 
@@ -211,7 +209,7 @@ This file (`docs/aspire-upgrade-inventory.md`) is the first file in a new `docs/
 
 ## 6. Addendum: 13.1.0 → 13.2.0 Delta
 
-> Provided by Seven (Research & Docs). These are the changes that land between the workshop's current baseline (13.1.0) and the first intermediate target (13.2.0). PR-2 must account for all of them on the way to 13.4.6.
+> Provided by Seven (Research & Docs). These are the changes that land between the workshop's current baseline (13.1.0) and the first intermediate target (13.2.0). PR-2 must account for all of them on the way to whatever version is latest at implementation time.
 
 ### Breaking Changes (13.1 → 13.2)
 
