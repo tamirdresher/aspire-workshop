@@ -127,16 +127,30 @@ Publishing and deployment examples:
    cd aspire-workshop
    ```
 
-2. **Install .NET Aspire workload**:
-   ```bash
-   dotnet new install Aspire.ProjectTemplates
+2. **Install the Aspire CLI**:
+
+   **Windows (PowerShell):**
+   ```powershell
+   iex "& { $(irm https://aspire.dev/install.ps1) }"
    ```
+
+   **Linux / macOS (bash):**
+   ```bash
+   curl -sSL https://aspire.dev/install.sh | bash
+   ```
+
+   > The Aspire CLI replaces the old `dotnet new install Aspire.ProjectTemplates`
+   > workflow — templates and SDK bits are provisioned on demand.
 
 3. **Verify installation**:
    ```bash
-   dotnet new list
+   aspire --version
+   aspire doctor
    ```
-   You should see `aspire` in the installed templates list.
+   `aspire doctor` diagnoses common environment issues (SDK, container runtime,
+   certificates, PATH). See the
+   [CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
+   the full command reference.
 
 ### Running the Workshop
 
@@ -169,7 +183,11 @@ cd Examples/Testing
 dotnet test
 ```
 
-The Aspire Dashboard will open automatically at `http://localhost:15888` (or similar).
+The Aspire Dashboard opens automatically when the AppHost starts. **Ports are
+assigned dynamically** — read the dashboard URL printed in the CLI output rather
+than assuming a fixed port. See the
+[CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
+details on the dashboard, telemetry, and the `aspire` CLI.
 
 ---
 

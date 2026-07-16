@@ -522,7 +522,9 @@ Now let's test the Admin app integration!
 
 1. **Start the AppHost** (Press `F5` or run `dotnet run --project start/Bookstore.AppHost`)
 
-2. **Open the Aspire Dashboard** (usually opens automatically at `http://localhost:15888` or similar)
+2. **Open the Aspire Dashboard** — it opens automatically when the AppHost starts.
+   The port is assigned dynamically, so open the dashboard URL printed in the CLI
+   output (don't assume a fixed `localhost` port).
 
 3. **Verify Admin appears** in the Resources tab:
    - You should see a resource named `admin`
@@ -543,6 +545,12 @@ Now let's test the Admin app integration!
    - Click the "Books" tab
    - The Admin app should fetch and display books from the API
    - If you see books listed, service discovery is working! 🎉
+
+> **💡 CLI tip:** You don't have to leave the terminal to inspect the app. With the
+> AppHost running, try `aspire describe` to see every resource, its state, and its
+> endpoints; `aspire logs admin --follow` to tail a resource's logs; and
+> `aspire logs api --search "GET"` to filter logs server-side. See the
+> [CLI, Dashboard & Observability guide](../../../docs/cli-dashboard-observability.md).
 
 ### Complete AppHost Example
 
