@@ -843,3 +843,10 @@ tmp/
 **/FastAPI_starter.egg-info/*
 Examples/Integrations/AppHosts/CustomizeContainerResources/ollama/id_ed25519
 Examples/Integrations/AppHosts/CustomizeContainerResources/ollama/id_ed25519.pub
+
+# Go build output (Examples/Polyglot/Go)
+Examples/Polyglot/Go/go-api/go-api
+Examples/Polyglot/Go/go-api/go-api.exe
+
+# Bun/Node dependencies (Examples/Polyglot/Bun)
+Examples/Polyglot/Bun/bun-api/node_modules/

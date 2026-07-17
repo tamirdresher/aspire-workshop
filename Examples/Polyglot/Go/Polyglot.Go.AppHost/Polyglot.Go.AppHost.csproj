@@ -1,0 +1,23 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>7e6a6f2e-6f0f-4c0e-9f4b-6f0b9f3f9c1a</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Aspire.Hosting.Go is not part of this repo's central package pin set (see
+      Directory.Packages.props) because it is not yet needed anywhere else. A dedicated
+      PackageVersion entry was added for it (currently the latest available build, a
+      13.4.x preview) so this example can pick up AddGoApp without touching the pins
+      used by the rest of the workshop.
+    -->
+    <PackageReference Include="Aspire.Hosting.Go" />
+  </ItemGroup>
+
+</Project>

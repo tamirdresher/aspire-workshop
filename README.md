@@ -106,6 +106,12 @@ Publishing and deployment examples:
 - **[Aspire Publish](Examples/AspirePublish/)** - Deployment scenarios and manifest generation
 - **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
 
+### 🌐 Polyglot
+Orchestrating non-.NET services alongside .NET:
+
+- **[Go](Examples/Polyglot/Go/)** - Hosting a Go HTTP service with `Aspire.Hosting.Go` and `AddGoApp(...)`
+- **[Bun](Examples/Polyglot/Bun/)** - Hosting a Bun HTTP service with `Aspire.Hosting.JavaScript` and `AddBunApp(...)`
+
 ---
 
 ## 🚀 Quick Start
@@ -235,7 +241,8 @@ aspire-workshop/
 │   ├── Services/                 # Service orchestration examples
 │   ├── AspireCustomResource/     # Custom resource examples
 │   ├── Testing/                  # Testing strategies
-│   └── AspirePublish/            # Deployment examples
+│   ├── AspirePublish/            # Deployment examples
+│   └── Polyglot/                 # Go and Bun polyglot examples
 └── README.md                     # This file
 ```
 
