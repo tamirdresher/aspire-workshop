@@ -6,6 +6,8 @@ using Bookstore.AppHost;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
+builder.AddDockerComposeEnvironment("env");
+
 var useCloudResources = builder.Configuration.GetValue<bool>("UseCloudResources");
 
 #pragma warning disable ASPIRECERTIFICATES001
@@ -67,12 +69,18 @@ var api = builder.AddProject<Projects.Bookstore_API>("api")
     .WithSeedCommand()
     .WithSeedHttpCommand();
 
-// Add Admin React app (Node.js)
+// Add Admin React app
 var admin = builder.AddJavaScriptApp("admin", "../Bookstore.Admin")
-    .WithReference(api)
-    .WithHttpEndpoint(env: "PORT")
+    .WithHttpEndpoint(env: "PORT");
+
+#pragma warning disable ASPIREJAVASCRIPT001
+admin.PublishAsStaticWebsite(
+        apiPath: "/api",
+        apiTarget: api,
+        configure: options => options.StripPrefix = true)
     .WithExternalHttpEndpoints()
-    .PublishAsDockerFile();
+    .WaitFor(api);
+#pragma warning restore ASPIREJAVASCRIPT001
 
 // Add Customer Web app
 var web = builder.AddProject<Projects.Bookstore_Web>("web")

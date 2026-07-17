@@ -20,7 +20,7 @@ public static class ApiCommandExtensions
 
                     if (string.IsNullOrEmpty(url))
                     {
-                        return new ExecuteCommandResult { Success = false, ErrorMessage = "Could not determine API URL." };
+                        return new ExecuteCommandResult { Success = false, Message = "Could not determine API URL." };
                     }
 
                     var client = new HttpClient();
@@ -32,12 +32,12 @@ public static class ApiCommandExtensions
                     }
                     else
                     {
-                        return new ExecuteCommandResult { Success = false, ErrorMessage = $"Failed to seed database. Status code: {response.StatusCode}" };
+                        return new ExecuteCommandResult { Success = false, Message = $"Failed to seed database. Status code: {response.StatusCode}" };
                     }
                 }
                 catch (Exception ex)
                 {
-                    return new ExecuteCommandResult { Success = false, ErrorMessage = $"Error seeding database: {ex.Message}" };
+                    return new ExecuteCommandResult { Success = false, Message = $"Error seeding database: {ex.Message}" };
                 }
             },
             commandOptions: new CommandOptions
