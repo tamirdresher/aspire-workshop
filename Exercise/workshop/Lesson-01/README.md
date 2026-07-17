@@ -1,8 +1,8 @@
-# Lesson 1: Getting Started with .NET Aspire
+# Lesson 1: Getting Started with Aspire
 
 ## Introduction
 
-In this lesson, you'll learn how to add .NET Aspire to an existing Bookstore application. Aspire provides powerful capabilities for building cloud-native, distributed applications including:
+In this lesson, you'll learn how to add Aspire to an existing Bookstore application. Aspire provides powerful capabilities for building cloud-native, distributed applications including:
 
 - **Service Defaults**: Smart defaults for telemetry, resiliency, health checks, and service discovery
 - **Orchestration**: App Host project to manage and run multiple services together
@@ -340,6 +340,10 @@ starts. Open that URL instead of assuming a fixed local port.
 To run either checked-in completed AppHost instead, use the commands in
 [Choose Your AppHost Track](#choose-your-apphost-track).
 
+> **Using an AI coding agent?** Use `aspire start` for background execution, add
+> `--isolated` in a worktree, and call `aspire wait` before interacting with a resource.
+> See [AI coding agents and Aspire skills](../../../docs/ai-agents-and-aspire-skills.md).
+
 ![Aspire Dashboard](../media/dashboard.png)
 
 The dashboard shows:
@@ -492,14 +496,16 @@ aspire integration search javascript
 aspire add javascript --apphost Exercise/start/Bookstore.AppHost/Bookstore.AppHost.csproj
 ```
 
-`aspire integration search` is read-only. `aspire add` selects the integration
-version for the AppHost's configured channel. On the stable 13.4.6 SDK used by
-this workshop, it adds `Aspire.Hosting.JavaScript` 13.4.6.
+`aspire integration search` is read-only and confirms the current official
+integration before `aspire add` selects the integration version for the
+AppHost's configured channel. On the stable 13.4.6 SDK used by this workshop,
+`aspire add` adds `Aspire.Hosting.JavaScript` 13.4.6.
 
 **Visual Studio/VS Code**:
 - Right-click on [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
 - Search for `Aspire.Hosting.JavaScript`
-- Install version `13.4.6` to match the AppHost SDK
+- Install version `13.4.6` to match the AppHost SDK and align with the repository's
+  central package management
 
 ### Step 2: Update AppHost to Add the Admin App
 
@@ -814,7 +820,7 @@ In this lesson, you've learned how to:
 ✅ Orchestrate JavaScript/Node.js applications alongside .NET services
 ✅ Enable service discovery for React apps to communicate with .NET APIs
 
-Your Bookstore application is now powered by .NET Aspire with improved observability, resiliency, and developer experience! You've successfully integrated both .NET and JavaScript applications in a unified orchestration system.
+Your Bookstore application is now powered by Aspire with improved observability, resiliency, and developer experience! You've successfully integrated both .NET and JavaScript applications in a unified orchestration system.
 
 ## Next Steps
 
@@ -834,3 +840,4 @@ In [Lesson 2](../Lesson-02/README.md), you'll learn how to:
 - [Service discovery](https://aspire.dev/fundamentals/service-discovery/)
 - [Dashboard overview](https://aspire.dev/dashboard/overview/)
 - [CLI, Dashboard & Observability guide](../../../docs/cli-dashboard-observability.md)
+- [AI coding agents and Aspire skills](../../../docs/ai-agents-and-aspire-skills.md)
