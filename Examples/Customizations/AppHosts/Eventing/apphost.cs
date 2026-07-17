@@ -1,4 +1,5 @@
 #:sdk Aspire.AppHost.Sdk@13.4.6
+#:property ManagePackageVersionsCentrally=false
 
 #:package Aspire.Hosting.Redis@13.4.6
 

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Testing" VersionOverride="13.0.2" />
+    <PackageReference Include="Aspire.Hosting.Testing" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Meziantou.Extensions.Logging.Xunit" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" VersionOverride="17.12.0" />
