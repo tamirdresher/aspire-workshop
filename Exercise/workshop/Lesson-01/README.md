@@ -16,6 +16,8 @@ By the end of this lesson, you'll have transformed a plain .NET solution into an
 
 - .NET 10 SDK installed
 - Visual Studio 2022 or Visual Studio Code with C# Dev Kit
+- Aspire CLI 13.4.6
+- Node.js 20.19+ and npm
 - Basic understanding of ASP.NET Core and Blazor
 
 ## Starting Point
@@ -26,6 +28,41 @@ The `/start` folder contains a basic Bookstore application with:
 - [`Bookstore.Shared`](../../start/Bookstore.Shared/Models.cs) - Shared models (Book, Order)
 
 Currently, the Web app connects to the API using a hardcoded URL (`https://localhost:7032`). We'll improve this with Aspire!
+
+## Choose Your AppHost Track
+
+The application services remain in .NET. For orchestration, choose one AppHost language and use it throughout Lessons 1 and 2:
+
+| Track | AppHost | Best for |
+| --- | --- | --- |
+| C# | [`code/Bookstore.AppHost/Program.cs`](./code/Bookstore.AppHost/Program.cs) | The original workshop flow and Visual Studio AppHost tooling |
+| TypeScript | [`code/Bookstore.TypeScriptAppHost/apphost.mts`](./code/Bookstore.TypeScriptAppHost/apphost.mts) | The Aspire GA polyglot AppHost model using `apphost.mts` |
+
+Both AppHosts orchestrate the same API, Web, Worker, and Vite Admin projects. Prepare the shared application from the lesson's `code` directory:
+
+```bash
+cd Exercise/workshop/Lesson-01/code
+dotnet restore Bookstore.sln
+npm --prefix Bookstore.Admin ci
+```
+
+Start the **C# AppHost**:
+
+```bash
+aspire start --apphost Bookstore.AppHost
+```
+
+Or prepare and start the **TypeScript AppHost**:
+
+```bash
+npm --prefix Bookstore.TypeScriptAppHost ci
+aspire restore --apphost Bookstore.TypeScriptAppHost
+npm --prefix Bookstore.TypeScriptAppHost run build
+dotnet build Bookstore.sln -c Release --no-restore
+aspire start --apphost Bookstore.TypeScriptAppHost
+```
+
+The Release build prevents concurrent first-run builds of the shared .NET projects when the TypeScript AppHost starts them together. The TypeScript track pins the Aspire SDK and JavaScript hosting integration to `13.4.6`. `aspire restore` generates the local `.aspire/modules` API; do not edit those generated files. Stop the selected AppHost with `aspire stop --apphost <AppHost-directory>`.
 
 ---
 
@@ -178,6 +215,8 @@ You should see output like `Healthy` indicating the health checks are working!
 
 The App Host project orchestrates your services, making it easy to run multiple projects together and providing the Aspire Dashboard for monitoring.
 
+The creation steps below describe the C# track. TypeScript-track users can use the checked-in [`Bookstore.TypeScriptAppHost`](./code/Bookstore.TypeScriptAppHost/) and compare the complete `apphost.mts` example later in this lesson.
+
 ### What is the App Host?
 
 The App Host (also called Orchestrator) is a .NET project that:
@@ -275,7 +314,15 @@ builder.Build().Run();
 #### Launch the Dashboard
 
 Press `F5` or click `Start Debugging`. The **Aspire Dashboard** will open in your browser!
-OR use the CLI with the command `aspire run`
+Or use the Aspire CLI from the lesson's `code` directory:
+
+```bash
+# C# track
+aspire start --apphost Bookstore.AppHost
+
+# TypeScript track
+aspire start --apphost Bookstore.TypeScriptAppHost
+```
 
 ![Aspire Dashboard](../media/dashboard.png)
 
@@ -403,21 +450,19 @@ The Admin app is a React application built with Vite that allows administrators 
 - Delete books from the inventory
 - View customer orders
 
-### Why AddJavaScriptApp?
+### Why AddViteApp?
 
-Aspire provides [`AddJavaScriptApp()`](https://learn.microsoft.com/dotnet/aspire/get-started/build-aspire-apps-with-nodejs) specifically for orchestrating JavaScript/Node.js applications. This method:
-- Works with any Node.js application (React, Vue, Angular, Express, etc.)
+Aspire provides `AddViteApp()` specifically for Vite-based applications. This method:
+- Runs the Vite development script with an Aspire-assigned port
 - Automatically configures environment variables for service discovery
 - Handles lifecycle management (start/stop)
 - Integrates with the Aspire Dashboard for monitoring
-- Supports containerization for deployment
-
-> **Note**: [`AddJavaScriptApp()`](https://learn.microsoft.com/dotnet/aspire/get-started/build-aspire-apps-with-nodejs) is different from `AddNpmApp()`. Use [`AddJavaScriptApp()`](https://learn.microsoft.com/dotnet/aspire/get-started/build-aspire-apps-with-nodejs) when you want to run the built application, while `AddNpmApp()` is for running npm scripts during development.
+- Supports both the C# and TypeScript AppHost APIs
 
 ### Prerequisites
 
 Before adding the Admin app, ensure you have:
-- **Node.js** installed (v18 or higher recommended)
+- **Node.js** installed (v20.19 or higher)
 - **npm** package manager
 - The [`Bookstore.Admin`](../../start/Bookstore.Admin) folder in your project
 
@@ -427,13 +472,13 @@ The AppHost needs a NuGet package to support JavaScript applications.
 
 **Command Line**:
 ```bash
-dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj package Aspire.Hosting.JavaScript --version 13.1.0
+dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj package Aspire.Hosting.JavaScript --version 13.4.6
 ```
 
 **Visual Studio/VS Code**:
 - Right-click on [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
 - Search for `Aspire.Hosting.JavaScript`
-- Install version `13.1.0`
+- Install version `13.4.6`
 
 ### Step 2: Update AppHost to Add the Admin App
 
@@ -449,11 +494,9 @@ var web = builder.AddProject<Projects.Bookstore_Web>("web")
     .WithExternalHttpEndpoints();
 
 // Add Admin React app
-var admin = builder.AddJavaScriptApp("admin", "../Bookstore.Admin")
+builder.AddViteApp("admin", "../Bookstore.Admin")
     .WithReference(api)
-    .WithHttpEndpoint(env: "PORT")
-    .WithExternalHttpEndpoints()
-    .PublishAsDockerFile();
+    .WithExternalHttpEndpoints();
 
 builder.Build().Run();
 ```
@@ -462,11 +505,11 @@ builder.Build().Run();
 
 Let's break down what each method does:
 
-#### `AddJavaScriptApp("admin", "../Bookstore.Admin")`
-- Registers a Node.js/JavaScript application with Aspire
+#### `AddViteApp("admin", "../Bookstore.Admin")`
+- Registers a Vite application with Aspire
 - `"admin"` is the resource name shown in the dashboard
 - `"../Bookstore.Admin"` is the relative path to the Node.js project directory
-- Aspire will run `npm run dev` (or the configured script) to start the app
+- Aspire runs `npm run dev` and supplies the endpoint port
 
 #### `WithReference(api)`
 - Enables service discovery from the Admin app to the API
@@ -474,28 +517,16 @@ Let's break down what each method does:
 - The Admin app can use these to dynamically discover the API URL
 - No hardcoded URLs needed!
 
-#### `WithHttpEndpoint(env: "PORT")`
-- Configures an HTTP endpoint for the Admin app
-- `env: "PORT"` tells Aspire to pass the port number via the `PORT` environment variable
-- Vite and most Node.js frameworks read this variable automatically
-- Aspire assigns a dynamic port to avoid conflicts
-
 #### `WithExternalHttpEndpoints()`
 - Makes the Admin app accessible from outside the local machine
 - Required for deployment scenarios (Azure Container Apps, Kubernetes, etc.)
 - Without this, the endpoint would only be accessible within the Aspire network
 
-#### `PublishAsDockerFile()`
-- Generates a Dockerfile for the Admin app during deployment
-- Enables containerized deployment without manually writing Dockerfiles
-- The container will run `npm run build` and serve the production build
-- Optional for local development, but important for deployment
-
 ### Step 3: Configure the Admin App to Use Service Discovery
 
-The Admin app currently has a hardcoded API URL. Let's make it dynamic!
+The checked-in Admin app sends requests to `/api`. Its Vite development proxy reads the `API_HTTP` endpoint injected by `.WithReference(api)`, so browser requests reach the Aspire-managed API without a hardcoded port.
 
-Open [`Bookstore.Admin/src/App.jsx`](../../start/Bookstore.Admin/src/App.jsx) and update line 4:
+Open `Bookstore.Admin/src/App.jsx` in your working copy and update line 4:
 
 **Before:**
 ```javascript
@@ -504,35 +535,42 @@ const API_BASE_URL = 'https://localhost:7032'
 
 **After:**
 ```javascript
-// Use environment variable for API URL (provided by Aspire service discovery)
-const API_BASE_URL = import.meta.env.VITE_services__api__https__0 ||
-                     import.meta.env.VITE_services__api__http__0 ||
-                     'https://localhost:7032'
+const API_BASE_URL = '/api'
 ```
 
-**How this works:**
-- Aspire injects service discovery variables like `services__api__https__0`
-- Vite exposes environment variables with the `VITE_` prefix
-- The code tries HTTPS first, falls back to HTTP, then to the hardcoded URL
-- This works seamlessly in development and production!
+Configure `vite.config.js` to proxy that path:
+
+```javascript
+server: {
+  host: true,
+  proxy: {
+    '/api': {
+      target: process.env.API_HTTP || 'https://localhost:7032',
+      changeOrigin: true,
+      secure: false,
+      rewrite: (path) => path.replace(/^\/api/, ''),
+    },
+  },
+}
+```
 
 ### Step 4: Run and Verify
 
 Now let's test the Admin app integration!
 
-1. **Start the AppHost** (Press `F5` or run `dotnet run --project start/Bookstore.AppHost`)
+1. **Start the AppHost** (Press `F5` for the C# project, or run `aspire start --apphost Bookstore.AppHost` / `aspire start --apphost Bookstore.TypeScriptAppHost` from the lesson's `code` directory.)
 
-2. **Open the Aspire Dashboard** (usually opens automatically at `http://localhost:15888` or similar)
+2. **Open the Aspire Dashboard** using the URL printed by the CLI (Visual Studio may open it automatically)
 
 3. **Verify Admin appears** in the Resources tab:
    - You should see a resource named `admin`
    - Status should show `Running`
-   - An endpoint URL will be displayed (e.g., `http://localhost:5174`)
+   - An Aspire-assigned endpoint URL will be displayed
 
 4. **View Admin Logs**:
    - Click `View Logs` for the `admin` resource
    - You should see Vite's development server output
-   - Look for messages like "Local: http://localhost:5174"
+   - Look for Vite's `Local:` URL with the assigned port
 
 5. **Access the Admin UI**:
    - Click the endpoint link for the `admin` resource
@@ -560,17 +598,43 @@ var web = builder.AddProject<Projects.Bookstore_Web>("web")
     .WithExternalHttpEndpoints();
 
 // Part D: Add Admin React app
-var admin = builder.AddJavaScriptApp("admin", "../Bookstore.Admin")
+builder.AddViteApp("admin", "../Bookstore.Admin")
     .WithReference(api)
-    .WithHttpEndpoint(env: "PORT")
-    .WithExternalHttpEndpoints()
-    .PublishAsDockerFile();
+    .WithExternalHttpEndpoints();
 
 // Add Worker service
 builder.AddProject<Projects.Bookstore_Worker>("worker")
     .WithReference(api);
 
 builder.Build().Run();
+```
+
+The equivalent GA TypeScript AppHost is [`Bookstore.TypeScriptAppHost/apphost.mts`](./code/Bookstore.TypeScriptAppHost/apphost.mts):
+
+```typescript
+import { createBuilder } from './.aspire/modules/aspire.mjs';
+
+const builder = await createBuilder();
+const api = builder.addProject('api', '../Bookstore.API/Bookstore.API.csproj');
+
+await builder
+  .addProject('web', '../Bookstore.Web/Bookstore.Web/Bookstore.Web.csproj')
+  .withReference(api)
+  .waitFor(api)
+  .withExternalHttpEndpoints();
+
+await builder
+  .addProject('worker', '../Bookstore.Worker/Bookstore.Worker.csproj')
+  .withReference(api)
+  .waitFor(api);
+
+await builder
+  .addViteApp('admin', '../Bookstore.Admin')
+  .withReference(api)
+  .waitFor(api)
+  .withExternalHttpEndpoints();
+
+await builder.build().run();
 ```
 
 ### Benefits of Orchestrating JavaScript Apps with Aspire
@@ -590,10 +654,10 @@ builder.Build().Run();
 - No manual configuration needed
 - Environment variables are managed for you
 
-#### 4. **Deployment Ready**
-- `PublishAsDockerFile()` generates production-ready containers
-- Deploy to Azure Container Apps, Kubernetes, or Docker
-- No manual Dockerfile creation needed
+#### 4. **Framework-Aware Hosting**
+- `AddViteApp()` configures the Vite development server and endpoint
+- The same application model is available from C# and TypeScript AppHosts
+- Publish behavior can be added explicitly for the deployment target
 
 #### 5. **Observability**
 - All JavaScript app logs appear in the Aspire Dashboard
@@ -606,36 +670,26 @@ When you use `WithReference(api)` in the AppHost, Aspire:
 
 1. **Injects environment variables** into the Admin app:
    ```
-   services__api__http__0=http://localhost:5123
-   services__api__https__0=https://localhost:7032
+   API_HTTP=http://localhost:<assigned-port>
    ```
 
-2. **The JavaScript app reads these variables** using Vite's `import.meta.env`:
+2. **The Vite development proxy reads the endpoint** in `vite.config.js`:
    ```javascript
-   const apiUrl = import.meta.env.VITE_services__api__https__0
+   target: process.env.API_HTTP
    ```
 
-3. **HTTP requests use the discovered URL**:
+3. **Browser requests use the same-origin proxy path**:
    ```javascript
-   fetch(`${apiUrl}/books`)
+   fetch('/api/books')
    ```
 
 4. **Aspire updates the URLs automatically** when services move or ports change
 
 This approach works with any JavaScript framework (React, Vue, Angular, Next.js, Express, etc.)!
 
-### Differences: AddJavaScriptApp vs AddNpmApp
+### Why the Vite-Specific API?
 
-| Feature | AddJavaScriptApp | AddNpmApp |
-|---------|------------------|-----------|
-| **Use Case** | Run built/compiled apps | Run npm scripts (dev mode) |
-| **Typical Command** | `node dist/index.js` | `npm run dev` |
-| **Best For** | Production-like setup | Active development |
-| **Hot Reload** | ❌ | ✅ (if supported by tool) |
-| **Build Required** | ✅ | ❌ |
-| **Deployment** | ✅ Better suited | ❌ Not recommended |
-
-For this workshop, we use [`AddJavaScriptApp()`](https://learn.microsoft.com/dotnet/aspire/get-started/build-aspire-apps-with-nodejs) because it works well for both development and deployment scenarios.
+`AddViteApp()` understands Vite's development command and endpoint behavior. Use the generic `AddJavaScriptApp()` or `AddNodeApp()` for JavaScript applications that are not Vite frontends.
 
 ### Troubleshooting
 
@@ -647,7 +701,7 @@ For this workshop, we use [`AddJavaScriptApp()`](https://learn.microsoft.com/dot
 **Can't connect to API?**
 - Check that the API resource is running in the dashboard
 - Verify the service discovery environment variables are injected (click Details on the admin resource)
-- Look for `VITE_services__api__http__0` or similar variables
+- Verify that `API_HTTP` is present and that the Vite proxy targets it
 
 **Port conflicts?**
 - Aspire automatically assigns dynamic ports

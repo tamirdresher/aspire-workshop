@@ -28,6 +28,8 @@ This workshop teaches you how to build production-ready distributed applications
 
 Learn how to add Aspire to an existing application, set up service defaults, create an AppHost for orchestration, and implement service discovery.
 
+Lessons 1 and 2 support two equivalent AppHost tracks: keep the application services in .NET and choose either the existing **C# AppHost** or the optional **TypeScript `apphost.mts` AppHost**.
+
 ---
 
 ### 📅 Day 2: Customizations & Integrations
@@ -121,7 +123,7 @@ Non-C# AppHost entry points:
 - **Visual Studio 2026**  or **Visual Studio Code** with C# Dev Kit
 - **Aspire CLI** 
 - **Docker Desktop** (for container resources) - [Download](https://www.docker.com/products/docker-desktop)
-- **Node.js 18+** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
+- **Node.js 20.19+** and npm (for JavaScript examples and the TypeScript AppHost track) - [Download](https://nodejs.org/)
 - **Azure Subscription** (optional, for cloud deployment)
 
 ### Setup
@@ -132,16 +134,17 @@ Non-C# AppHost entry points:
    cd aspire-workshop
    ```
 
-2. **Install .NET Aspire workload**:
+2. **Install the Aspire project templates**:
    ```bash
-   dotnet new install Aspire.ProjectTemplates
+   dotnet new install Aspire.ProjectTemplates::13.4.6
    ```
 
-3. **Verify installation**:
+3. **Verify the Aspire CLI and templates**:
    ```bash
+   aspire --version
    dotnet new list
    ```
-   You should see `aspire` in the installed templates list.
+   The TypeScript AppHost lesson assets target Aspire CLI and hosting integrations `13.4.6`. You should also see the Aspire templates in the template list.
 
 ### Running the Workshop
 
@@ -154,7 +157,7 @@ cd Exercise/start
 dotnet restore
 ```
 
-**Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** for step-by-step instructions.
+**Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** and choose the C# or TypeScript AppHost track. The same choice carries into [Lesson 2](Exercise/workshop/Lesson-02/README.md).
 
 #### Explore Examples
 
@@ -162,12 +165,10 @@ Run any example to see Aspire in action:
 
 ```bash
 # Run the service orchestration example
-cd Examples/Services
-dotnet run --project AspireCustomResource.AppHost
+aspire start --apphost Examples/Services/AspireCustomResource.AppHost
 
 # Run the testing example
-cd Examples/Testing/src
-dotnet run --project NoteTaker.AppHost
+aspire start --apphost Examples/Testing/src/NoteTaker.AppHost
 
 # Run integration tests
 cd Examples/Testing
