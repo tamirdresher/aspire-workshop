@@ -10,17 +10,26 @@ public static class ApiCommandExtensions
 
     public static IResourceBuilder<ProjectResource> WithSeedCommand(this IResourceBuilder<ProjectResource> builder)
     {
-        var httpEndpoint = builder.GetEndpoint("http");
-
         builder.WithCommand(
             name: "seed-db",
             displayName: "Seed Database",
             executeCommand: async context =>
             {
-                var endpointUrl = await httpEndpoint.GetValueAsync(context.CancellationToken);
-                if (!Uri.TryCreate(endpointUrl, UriKind.Absolute, out var endpoint))
+                var apiEndpoint = GetPreferredApiEndpoint(builder);
+                if (apiEndpoint is null)
                 {
-                    return CommandResults.Failure("Could not resolve the API HTTP endpoint.");
+                    return CommandResults.Failure(
+                        $"Resource '{builder.Resource.Name}' does not expose an HTTP(S) endpoint. " +
+                        "Configure an endpoint named 'http' or 'https', or set an endpoint URI scheme to HTTP(S).");
+                }
+
+                var endpointUrl = await apiEndpoint.GetValueAsync(context.CancellationToken);
+                if (!Uri.TryCreate(endpointUrl, UriKind.Absolute, out var endpoint) ||
+                    (endpoint.Scheme != Uri.UriSchemeHttp && endpoint.Scheme != Uri.UriSchemeHttps))
+                {
+                    return CommandResults.Failure(
+                        $"The '{apiEndpoint.EndpointName}' endpoint for resource '{builder.Resource.Name}' " +
+                        "did not resolve to a valid absolute HTTP(S) URL. Ensure the API resource is running.");
                 }
 
                 try
@@ -69,6 +78,41 @@ public static class ApiCommandExtensions
             });
 
         return builder;
+    }
+
+    private static EndpointReference? GetPreferredApiEndpoint(
+        IResourceBuilder<ProjectResource> builder)
+    {
+        var httpEndpoint = builder.GetEndpoint("http");
+        if (httpEndpoint.Exists)
+        {
+            return httpEndpoint;
+        }
+
+        var httpsEndpoint = builder.GetEndpoint("https");
+        if (httpsEndpoint.Exists)
+        {
+            return httpsEndpoint;
+        }
+
+        if (!builder.Resource.TryGetEndpoints(out var endpoints))
+        {
+            return null;
+        }
+
+        var endpointList = endpoints.ToArray();
+        var endpoint = endpointList.FirstOrDefault(
+            static endpoint => string.Equals(
+                endpoint.UriScheme,
+                Uri.UriSchemeHttp,
+                StringComparison.OrdinalIgnoreCase))
+            ?? endpointList.FirstOrDefault(
+                static endpoint => string.Equals(
+                    endpoint.UriScheme,
+                    Uri.UriSchemeHttps,
+                    StringComparison.OrdinalIgnoreCase));
+
+        return endpoint is null ? null : builder.GetEndpoint(endpoint.Name);
     }
 
     public static IResourceBuilder<ProjectResource> WithSeedHttpCommand(this IResourceBuilder<ProjectResource> builder)
