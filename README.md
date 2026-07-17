@@ -63,8 +63,8 @@ This repository includes practical examples demonstrating various Aspire capabil
 Advanced AppHost customization techniques:
 
 - **[Annotations](Examples/Customizations/AppHosts/Annotations/)** - Using annotations for resource extensibility
-- **[Commands](Examples/Customizations/AppHosts/Commands/)** - Custom commands with interaction service
-- **[Eventing](Examples/Customizations/AppHosts/Eventing/)** - Resource lifecycle events
+- **[Commands](Examples/Customizations/AppHosts/Commands/)** - Typed command arguments, validation, JSON results, visibility, and persistent resource lifetime
+- **[Eventing](Examples/Customizations/AppHosts/Eventing/)** - AppHost and resource-scoped lifecycle event callbacks
 - **[Parameters](Examples/Customizations/AppHosts/Parameters/)** - Parameter management and custom inputs
 - **[Pipelines](Examples/Customizations/AppHosts/Pipelines/)** - Resource processing pipelines
 - **[URL Customizations](Examples/Customizations/AppHosts/UrlCustomizations/)** - Custom URL configurations for the dashboard

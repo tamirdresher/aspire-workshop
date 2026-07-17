@@ -152,8 +152,10 @@ We will add an Azure Storage Queue to handle background processing tasks.
 We can add custom commands to the Aspire Dashboard to perform actions on our resources.
 
 1.  **Add Command Extensions**:
-    Create a new file `Bookstore.AppHost/ApiCommandExtensions.cs` and add the extension methods for adding commands to add seeding data to the databse.
+    Create a new file `Bookstore.AppHost/ApiCommandExtensions.cs` and add the extension methods for seeding the database.
     *(This file is provided in the `code/Bookstore.AppHost` directory of this lesson)*
+
+    The callback command uses a typed Boolean argument, health-aware command state, a confirmation prompt, explicit dashboard/API visibility, and a text result that can open in the dashboard. The HTTP command sends the required `POST` request and displays its response body.
 
 2.  **Register Commands**:
     In `Bookstore.AppHost/Program.cs`, use the extension methods to add commands to the API resource:
@@ -164,6 +166,14 @@ We can add custom commands to the Aspire Dashboard to perform actions on our res
         .WithSeedCommand()
         .WithSeedHttpCommand();
     ```
+
+    After the AppHost starts, the callback command can also be invoked from the CLI:
+
+    ```bash
+    aspire resource api seed-db --show-response --apphost code/Bookstore.AppHost/Bookstore.AppHost.csproj
+    ```
+
+    `InteractionInput.Name` becomes the CLI option name, so command arguments are passed as named options.
 
 ## Step 5: Configure Cloud Resources
 
@@ -264,7 +274,7 @@ We can customize the cloud resources, such as setting the location or SKU.
 ## Step 7: Run and Publish
 
 1.  **Run Locally**:
-    Run the application with `aspire run`. Ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that the emulators are used.
+    Run the application with `aspire start --apphost code/Bookstore.AppHost/Bookstore.AppHost.csproj --isolated`. Ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that the emulators are used.
 
 2.  **Publish to Azure**:
     To deploy to Azure, you would typically set `UseCloudResources` to `true` (or override it via environment variables) and use `azd up` or `dotnet publish`.
