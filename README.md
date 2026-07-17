@@ -28,6 +28,8 @@ This workshop teaches you how to build production-ready distributed applications
 
 Learn how to add Aspire to an existing application, set up service defaults, create an AppHost for orchestration, and implement service discovery.
 
+Lessons 1 and 2 support two equivalent AppHost tracks: keep the application services in .NET and choose either the existing **C# AppHost** or the optional **TypeScript `apphost.mts` AppHost**.
+
 ---
 
 ### 📅 Day 2: Customizations & Integrations
@@ -106,6 +108,11 @@ Publishing and deployment examples:
 - **[Aspire Publish](Examples/AspirePublish/)** - Deployment scenarios and manifest generation
 - **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
 
+### 🟦 Multi-language AppHosts
+Non-C# AppHost entry points:
+
+- **[TypeScript AppHost](Examples/TypeScriptAppHost/)** - GA `apphost.mts` sample orchestrating a Node.js/Express API with `addNodeApp`
+
 ---
 
 ## 🚀 Quick Start
@@ -116,7 +123,7 @@ Publishing and deployment examples:
 - **Visual Studio 2026**  or **Visual Studio Code** with C# Dev Kit
 - **Aspire CLI 13.4+** - [Install](https://aspire.dev/get-started/install-cli/)
 - **Docker Desktop** (for container resources) - [Download](https://www.docker.com/products/docker-desktop)
-- **Node.js 18+** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
+- **Node.js 20.19+** and npm (for JavaScript examples and the TypeScript AppHost track) - [Download](https://nodejs.org/)
 - **Azure Subscription** (optional, for cloud deployment)
 
 ### Setup
@@ -139,20 +146,30 @@ Publishing and deployment examples:
    curl -sSL https://aspire.dev/install.sh | bash
    ```
 
-   > Use the Aspire CLI for lifecycle commands and starter templates. Lesson 1
-   > installs the matching `Aspire.ProjectTemplates` package only because it
-   > creates AppHost and Service Defaults projects separately. Aspire 13.4.6 was
-   > the latest stable release when this workshop guidance was validated.
+3. **Install the matching granular project templates**:
+   ```bash
+   dotnet new install Aspire.ProjectTemplates::13.4.6
+   ```
 
-3. **Verify installation**:
+   > Use the Aspire CLI for lifecycle commands and starter templates. Lesson 1
+   > installs `Aspire.ProjectTemplates` only because it creates AppHost and
+   > Service Defaults projects separately. Aspire 13.4.6 was the latest stable
+   > release when this workshop guidance was validated.
+
+4. **Verify installation**:
    ```bash
    aspire --version
    aspire doctor
+   dotnet new list
    ```
    `aspire doctor` diagnoses common environment issues (SDK, container runtime,
    certificates, PATH). See the
    [CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
    the full command reference.
+
+   The TypeScript AppHost lesson assets target Aspire CLI and hosting
+   integrations `13.4.6`. The template list should include the Aspire AppHost
+   and Service Defaults templates.
 
 ### Running the Workshop
 
@@ -164,7 +181,7 @@ Follow the progressive lessons to build the Bookstore application:
 dotnet restore Exercise/start/Bookstore.sln
 ```
 
-**Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** for step-by-step instructions.
+**Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** and choose the C# or TypeScript AppHost track. The same choice carries into [Lesson 2](Exercise/workshop/Lesson-02/README.md).
 
 #### Explore Examples
 
@@ -255,7 +272,8 @@ aspire-workshop/
 │   ├── Services/                 # Service orchestration examples
 │   ├── AspireCustomResource/     # Custom resource examples
 │   ├── Testing/                  # Testing strategies
-│   └── AspirePublish/            # Deployment examples
+│   ├── AspirePublish/            # Deployment examples
+│   └── TypeScriptAppHost/        # GA TypeScript AppHost sample
 └── README.md                     # This file
 ```
 
