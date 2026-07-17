@@ -1,4 +1,4 @@
-#:sdk Aspire.AppHost.Sdk@13.1.0
+#:sdk Aspire.AppHost.Sdk@13.4.6
 
 using System.Diagnostics;
 
