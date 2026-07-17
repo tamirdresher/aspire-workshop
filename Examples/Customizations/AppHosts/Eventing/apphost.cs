@@ -1,7 +1,8 @@
-#:sdk Aspire.AppHost.Sdk@13.1.0
+#:sdk Aspire.AppHost.Sdk@13.4.6
+#:property ManagePackageVersionsCentrally=false
 
-#:package Aspire.Hosting.Redis@13.1.0
-#:package Aspire.Hosting.PostgreSQL@13.1.0
+#:package Aspire.Hosting.Redis@13.4.6
+#:package Aspire.Hosting.PostgreSQL@13.4.6
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

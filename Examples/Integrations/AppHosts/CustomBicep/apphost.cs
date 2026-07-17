@@ -1,6 +1,7 @@
-#:sdk Aspire.AppHost.Sdk@13.1.0
+#:sdk Aspire.AppHost.Sdk@13.4.6
+#:property ManagePackageVersionsCentrally=false
 
-#:package Aspire.Hosting.Azure@13.1.0
+#:package Aspire.Hosting.Azure@13.4.6
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -11,7 +12,5 @@ var storage = builder.AddBicepTemplate(
 
 builder.AddCSharpApp("api", "./../../Services/AspireCustomResource.ApiService/")
        .WithEnvironment("ConnectionStrings__storage", storage.GetOutput("connectionString"));
-
-Aspire.Hosting.Azure.AzureBicepResource
 
 builder.Build().Run();
