@@ -1,50 +1,71 @@
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+#pragma warning disable ASPIREINTERACTION001
 
 namespace Bookstore.AppHost;
 
 public static class ApiCommandExtensions
 {
+    private static readonly HttpClient Client = new();
+
     public static IResourceBuilder<ProjectResource> WithSeedCommand(this IResourceBuilder<ProjectResource> builder)
     {
+        var httpEndpoint = builder.GetEndpoint("http");
+
         builder.WithCommand(
             name: "seed-db",
             displayName: "Seed Database",
             executeCommand: async context =>
             {
+                var endpointUrl = await httpEndpoint.GetValueAsync(context.CancellationToken);
+                if (!Uri.TryCreate(endpointUrl, UriKind.Absolute, out var endpoint))
+                {
+                    return CommandResults.Failure("Could not resolve the API HTTP endpoint.");
+                }
+
                 try
                 {
+                    using var response = await Client.PostAsync(
+                        new Uri(endpoint, "/seed"),
+                        null,
+                        context.CancellationToken);
+                    var responseText = await response.Content.ReadAsStringAsync(context.CancellationToken);
 
-                    builder.Resource.TryGetUrls(out var urls);
-                    var url = urls?.FirstOrDefault(u => u?.Endpoint?.EndpointName == "http")?.Url
-                           ?? urls?.FirstOrDefault(u => u?.Endpoint?.EndpointName == "https")?.Url;
-
-                    if (string.IsNullOrEmpty(url))
-                    {
-                        return new ExecuteCommandResult { Success = false, ErrorMessage = "Could not determine API URL." };
-                    }
-
-                    var client = new HttpClient();
-                    var response = await client.PostAsync($"{url}/seed", null);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return new ExecuteCommandResult { Success = true };
-                    }
-                    else
-                    {
-                        return new ExecuteCommandResult { Success = false, ErrorMessage = $"Failed to seed database. Status code: {response.StatusCode}" };
-                    }
+                    return response.IsSuccessStatusCode
+                        ? CommandResults.Success(
+                            message: "Database seed request completed.",
+                            result: responseText,
+                            resultFormat: CommandResultFormat.Text,
+                            displayImmediately: context.Arguments.GetBoolean("show-response"))
+                        : CommandResults.Failure(
+                            errorMessage: $"Database seed request failed with status {(int)response.StatusCode}.",
+                            result: responseText,
+                            resultFormat: CommandResultFormat.Text);
                 }
-                catch (Exception ex)
+                catch (HttpRequestException ex)
                 {
-                    return new ExecuteCommandResult { Success = false, ErrorMessage = $"Error seeding database: {ex.Message}" };
+                    return CommandResults.Failure(ex);
                 }
             },
             commandOptions: new CommandOptions
             {
-                UpdateState = context => context.ResourceSnapshot.State == "Running" ? ResourceCommandState.Enabled : ResourceCommandState.Disabled,
-                IconName = "Database", // Specify the icon name
-                IconVariant = IconVariant.Filled // Specify the icon variant
+                Description = "Seeds the catalog and optionally opens the API response.",
+                ConfirmationMessage = "Seed the catalog database?",
+                Arguments =
+                [
+                    new InteractionInput
+                    {
+                        Name = "show-response",
+                        Label = "Open response",
+                        InputType = InputType.Boolean,
+                        Value = "true",
+                        Required = true
+                    }
+                ],
+                UpdateState = GetCommandState,
+                Visibility = ResourceCommandVisibility.UI | ResourceCommandVisibility.Api,
+                IconName = "Database",
+                IconVariant = IconVariant.Filled
             });
 
         return builder;
@@ -55,22 +76,24 @@ public static class ApiCommandExtensions
         builder.WithHttpCommand(
             path: "/seed",
             displayName: "Seed Database (HTTP)",
-            commandOptions: new HttpCommandOptions()
+            commandOptions: new HttpCommandOptions
             {
-                Description = """
-                Add books to the DB
-                """,
-                PrepareRequest = (context) =>
-                {                   
-                    context.Request.Headers.Add("X-Example-Header", $"SomeValue");
-                    return Task.CompletedTask;
-                },
+                Description = "Seeds the catalog through a POST request and displays the response body.",
+                ConfirmationMessage = "Seed the catalog database?",
+                Method = HttpMethod.Post,
+                ResultMode = HttpCommandResultMode.Text,
                 IconName = "DocumentLightning",
-                IsHighlighted = true,            
-                UpdateState = context => context.ResourceSnapshot.State == "Running" ? ResourceCommandState.Enabled : ResourceCommandState.Disabled,
-                IconVariant = IconVariant.Filled // Specify the icon variant
+                IconVariant = IconVariant.Filled,
+                IsHighlighted = true,
+                UpdateState = GetCommandState,
+                Visibility = ResourceCommandVisibility.UI | ResourceCommandVisibility.Api
             });
 
         return builder;
     }
+
+    private static ResourceCommandState GetCommandState(UpdateCommandStateContext context) =>
+        context.ResourceSnapshot.HealthStatus is HealthStatus.Healthy
+            ? ResourceCommandState.Enabled
+            : ResourceCommandState.Disabled;
 }
