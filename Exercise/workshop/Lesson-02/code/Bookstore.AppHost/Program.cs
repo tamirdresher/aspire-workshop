@@ -71,15 +71,16 @@ var api = builder.AddProject<Projects.Bookstore_API>("api")
 
 // Add Admin React app
 var admin = builder.AddJavaScriptApp("admin", "../Bookstore.Admin")
-    .WithHttpEndpoint(env: "PORT");
+    .WithHttpEndpoint(env: "PORT")
+    .WithReference(api)
+    .WaitFor(api);
 
 #pragma warning disable ASPIREJAVASCRIPT001
 admin.PublishAsStaticWebsite(
         apiPath: "/api",
         apiTarget: api,
         configure: options => options.StripPrefix = true)
-    .WithExternalHttpEndpoints()
-    .WaitFor(api);
+    .WithExternalHttpEndpoints();
 #pragma warning restore ASPIREJAVASCRIPT001
 
 // Add Customer Web app

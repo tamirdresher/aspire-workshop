@@ -8,14 +8,13 @@ const apiUrl = process.env.API_HTTPS ?? process.env.API_HTTP ?? 'https://localho
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5174,
-    strictPort: true,
+    host: true,
     proxy: {
       '/api': {
         target: apiUrl,
         changeOrigin: true,
         secure: false,
-        rewrite: path => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },

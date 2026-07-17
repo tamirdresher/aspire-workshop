@@ -1,9 +1,9 @@
+#:sdk Aspire.AppHost.Sdk@13.4.6
 #:property ManagePackageVersionsCentrally=false
+
 #:package Aspire.Hosting.Docker@13.4.6
 #:package Aspire.Hosting.Kubernetes@13.4.6-preview.1.26319.6
 #:package Aspire.Hosting.Python@13.4.6
-
-#:sdk Aspire.AppHost.Sdk@13.4.6
 
 using Microsoft.Extensions.Configuration;
 

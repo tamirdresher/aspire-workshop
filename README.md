@@ -28,6 +28,8 @@ This workshop teaches you how to build production-ready distributed applications
 
 Learn how to add Aspire to an existing application, set up service defaults, create an AppHost for orchestration, and implement service discovery.
 
+Lessons 1 and 2 support two equivalent AppHost tracks: keep the application services in .NET and choose either the existing **C# AppHost** or the optional **TypeScript `apphost.mts` AppHost**.
+
 ---
 
 ### 📅 Day 2: Customizations & Integrations
@@ -63,8 +65,8 @@ This repository includes practical examples demonstrating various Aspire capabil
 Advanced AppHost customization techniques:
 
 - **[Annotations](Examples/Customizations/AppHosts/Annotations/)** - Using annotations for resource extensibility
-- **[Commands](Examples/Customizations/AppHosts/Commands/)** - Custom commands with interaction service
-- **[Eventing](Examples/Customizations/AppHosts/Eventing/)** - Resource lifecycle events
+- **[Commands](Examples/Customizations/AppHosts/Commands/)** - Typed command arguments, validation, JSON results, visibility, and persistent resource lifetime
+- **[Eventing](Examples/Customizations/AppHosts/Eventing/)** - AppHost and resource-scoped lifecycle event callbacks
 - **[Parameters](Examples/Customizations/AppHosts/Parameters/)** - Parameter management and custom inputs
 - **[Pipelines](Examples/Customizations/AppHosts/Pipelines/)** - Resource processing pipelines
 - **[URL Customizations](Examples/Customizations/AppHosts/UrlCustomizations/)** - Custom URL configurations for the dashboard
@@ -111,6 +113,11 @@ Current publishing and deployment guidance:
   registries, current `kubectl` context, Helm, ingress/Gateway API, TLS, and preview-package boundaries
 - **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
 
+### 🟦 Multi-language AppHosts
+Non-C# AppHost entry points:
+
+- **[TypeScript AppHost](Examples/TypeScriptAppHost/)** - GA `apphost.mts` sample orchestrating a Node.js/Express API with `addNodeApp`
+
 ---
 
 ## 🚀 Quick Start
@@ -119,29 +126,55 @@ Current publishing and deployment guidance:
 
 - **.NET 10 SDK** or later - [Download](https://dotnet.microsoft.com/download)
 - **Visual Studio 2026**  or **Visual Studio Code** with C# Dev Kit
-- **Aspire CLI** 
+- **Aspire CLI 13.4+** - [Install](https://aspire.dev/get-started/install-cli/)
 - **Docker Desktop** (for container resources) - [Download](https://www.docker.com/products/docker-desktop)
-- **Node.js 18+** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
+- **Node.js 20.19+** and npm (for JavaScript examples and the TypeScript AppHost track) - [Download](https://nodejs.org/)
 - **Azure Subscription** (optional, for cloud deployment)
 
 ### Setup
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/aspire-workshop.git
+   git clone https://github.com/tamirdresher/aspire-workshop.git
    cd aspire-workshop
    ```
 
-2. **Install .NET Aspire workload**:
-   ```bash
-   dotnet new install Aspire.ProjectTemplates
+2. **Install the Aspire CLI**:
+
+   **Windows (PowerShell):**
+   ```powershell
+   irm https://aspire.dev/install.ps1 | iex
    ```
 
-3. **Verify installation**:
+   **Linux / macOS (bash):**
    ```bash
+   curl -sSL https://aspire.dev/install.sh | bash
+   ```
+
+3. **Install the matching granular project templates**:
+   ```bash
+   dotnet new install Aspire.ProjectTemplates::13.4.6
+   ```
+
+   > Use the Aspire CLI for lifecycle commands and starter templates. Lesson 1
+   > installs `Aspire.ProjectTemplates` only because it creates AppHost and
+   > Service Defaults projects separately. Aspire 13.4.6 was the latest stable
+   > release when this workshop guidance was validated.
+
+4. **Verify installation**:
+   ```bash
+   aspire --version
+   aspire doctor
    dotnet new list
    ```
-   You should see `aspire` in the installed templates list.
+   `aspire doctor` diagnoses common environment issues (SDK, container runtime,
+   certificates, PATH). See the
+   [CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
+   the full command reference.
+
+   The TypeScript AppHost lesson assets target Aspire CLI and hosting
+   integrations `13.4.6`. The template list should include the Aspire AppHost
+   and Service Defaults templates.
 
 ### Running the Workshop
 
@@ -150,31 +183,35 @@ Current publishing and deployment guidance:
 Follow the progressive lessons to build the Bookstore application:
 
 ```bash
-cd Exercise/start
-dotnet restore
+dotnet restore Exercise/start/Bookstore.sln
 ```
 
-**Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** for step-by-step instructions.
+**Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** and choose the C# or TypeScript AppHost track. The same choice carries into [Lesson 2](Exercise/workshop/Lesson-02/README.md).
 
 #### Explore Examples
 
-Run any example to see Aspire in action:
+Run any example from the repository root. `aspire ls` shows the AppHosts that
+the CLI discovered, and `--apphost` selects one without an interactive prompt:
 
 ```bash
+# Discover AppHosts in this repository
+aspire ls
+
 # Run the service orchestration example
-cd Examples/Services
-dotnet run --project AspireCustomResource.AppHost
+aspire run --apphost Examples/Services/AspireCustomResource.AppHost/AspireCustomResource.AppHost.csproj
 
 # Run the testing example
-cd Examples/Testing/src
-dotnet run --project NoteTaker.AppHost
+aspire run --apphost Examples/Testing/src/NoteTaker.AppHost/NoteTaker.AppHost.csproj
 
-# Run integration tests
-cd Examples/Testing
-dotnet test
+# Run its integration tests
+dotnet test Examples/Testing/src/NoteTaker.slnx
 ```
 
-The Aspire Dashboard will open automatically at `http://localhost:15888` (or similar).
+The Aspire Dashboard opens automatically when the AppHost starts. **Ports are
+assigned dynamically** — read the dashboard URL printed in the CLI output rather
+than assuming a fixed port. See the
+[CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
+details on the dashboard, telemetry, and the `aspire` CLI.
 
 ---
 
@@ -240,7 +277,8 @@ aspire-workshop/
 │   ├── Services/                 # Service orchestration examples
 │   ├── AspireCustomResource/     # Custom resource examples
 │   ├── Testing/                  # Testing strategies
-│   └── AspirePublish/            # Deployment examples
+│   ├── AspirePublish/            # Deployment examples
+│   └── TypeScriptAppHost/        # GA TypeScript AppHost sample
 └── README.md                     # This file
 ```
 
