@@ -1,8 +1,8 @@
-# Lesson 1: Getting Started with .NET Aspire
+# Lesson 1: Getting Started with Aspire
 
 ## Introduction
 
-In this lesson, you'll learn how to add .NET Aspire to an existing Bookstore application. Aspire provides powerful capabilities for building cloud-native, distributed applications including:
+In this lesson, you'll learn how to add Aspire to an existing Bookstore application. Aspire provides powerful capabilities for building cloud-native, distributed applications including:
 
 - **Service Defaults**: Smart defaults for telemetry, resiliency, health checks, and service discovery
 - **Orchestration**: App Host project to manage and run multiple services together
@@ -15,7 +15,7 @@ By the end of this lesson, you'll have transformed a plain .NET solution into an
 ## Prerequisites
 
 - .NET 10 SDK installed
-- Visual Studio 2022 or Visual Studio Code with C# Dev Kit
+- Visual Studio 2026 or Visual Studio Code with C# Dev Kit
 - Basic understanding of ASP.NET Core and Blazor
 
 ## Starting Point
@@ -220,7 +220,7 @@ The AppHost needs references to the projects it will orchestrate.
 
 Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Add` > `Reference` → Check both `Bookstore.API`, `Bookstore.Web` and `Bookstore.Worker` → Click `OK`
 
-> **Pro Tip**: In Visual Studio 2022, you can drag and drop projects onto the AppHost project to add references.
+> **Pro Tip**: In Visual Studio, you can drag and drop projects onto the AppHost project to add references.
 
 #### Command Line
 
@@ -274,8 +274,16 @@ builder.Build().Run();
 
 #### Launch the Dashboard
 
-Press `F5` or click `Start Debugging`. The **Aspire Dashboard** will open in your browser!
-OR use the CLI with the command `aspire run`
+Press `F5` or click `Start Debugging`. The **Aspire Dashboard** will open in your browser.
+Or run the AppHost interactively from the repository root:
+
+```bash
+aspire run --apphost start/Bookstore.AppHost
+```
+
+> **Using an AI coding agent?** Use `aspire start` for background execution, add
+> `--isolated` in a worktree, and call `aspire wait` before interacting with a resource.
+> See [AI coding agents and Aspire skills](../../../docs/ai-agents-and-aspire-skills.md).
 
 ![Aspire Dashboard](../media/dashboard.png)
 
@@ -417,7 +425,7 @@ Aspire provides [`AddJavaScriptApp()`](https://learn.microsoft.com/dotnet/aspire
 ### Prerequisites
 
 Before adding the Admin app, ensure you have:
-- **Node.js** installed (v18 or higher recommended)
+- A current **Node.js LTS** release
 - **npm** package manager
 - The [`Bookstore.Admin`](../../start/Bookstore.Admin) folder in your project
 
@@ -427,13 +435,21 @@ The AppHost needs a NuGet package to support JavaScript applications.
 
 **Command Line**:
 ```bash
-dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj package Aspire.Hosting.JavaScript --version 13.1.0
+aspire integration search javascript \
+  --apphost start/Bookstore.AppHost \
+  --format Json
+
+aspire add javascript --apphost start/Bookstore.AppHost
 ```
+
+The discovery step confirms the current official integration before the Aspire CLI adds the
+compatible package reference.
 
 **Visual Studio/VS Code**:
 - Right-click on [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
 - Search for `Aspire.Hosting.JavaScript`
-- Install version `13.1.0`
+- Install the version aligned with the AppHost SDK and the repository's central package
+  management.
 
 ### Step 2: Update AppHost to Add the Admin App
 
@@ -520,9 +536,10 @@ const API_BASE_URL = import.meta.env.VITE_services__api__https__0 ||
 
 Now let's test the Admin app integration!
 
-1. **Start the AppHost** (Press `F5` or run `dotnet run --project start/Bookstore.AppHost`)
+1. **Start the AppHost** (Press `F5` or run `aspire run --apphost start/Bookstore.AppHost`)
 
-2. **Open the Aspire Dashboard** (usually opens automatically at `http://localhost:15888` or similar)
+2. **Open the Aspire Dashboard** using the URL printed by the CLI. AppHost dashboard ports
+   are assigned dynamically.
 
 3. **Verify Admin appears** in the Resources tab:
    - You should see a resource named `admin`
@@ -716,7 +733,7 @@ In this lesson, you've learned how to:
 ✅ Orchestrate JavaScript/Node.js applications alongside .NET services
 ✅ Enable service discovery for React apps to communicate with .NET APIs
 
-Your Bookstore application is now powered by .NET Aspire with improved observability, resiliency, and developer experience! You've successfully integrated both .NET and JavaScript applications in a unified orchestration system.
+Your Bookstore application is now powered by Aspire with improved observability, resiliency, and developer experience! You've successfully integrated both .NET and JavaScript applications in a unified orchestration system.
 
 ## Next Steps
 
@@ -730,8 +747,9 @@ In [Lesson 2](../Lesson-02/README.md), you'll learn how to:
 
 ## Learn More
 
-- [.NET Aspire Documentation](https://learn.microsoft.com/dotnet/aspire/)
-- [Service Defaults](https://learn.microsoft.com/dotnet/aspire/fundamentals/service-defaults)
-- [App Host Overview](https://learn.microsoft.com/dotnet/aspire/fundamentals/app-host-overview)
+- [Aspire documentation](https://aspire.dev/)
+- [Service Defaults](https://aspire.dev/fundamentals/service-defaults/)
+- [AppHost overview](https://aspire.dev/get-started/app-host/)
 - [Service Discovery](https://learn.microsoft.com/dotnet/aspire/service-discovery/overview)
-- [Dashboard Overview](https://learn.microsoft.com/dotnet/aspire/fundamentals/dashboard)
+- [Dashboard overview](https://aspire.dev/dashboard/overview/)
+- [AI coding agents and Aspire skills](../../../docs/ai-agents-and-aspire-skills.md)

@@ -1,10 +1,10 @@
-# Building Distributed Apps with .NET Aspire - Workshop
+# Building Distributed Apps with Aspire - Workshop
 
-A comprehensive 3-day workshop for building cloud-native, distributed applications using .NET Aspire.
+A comprehensive 3-day workshop for building cloud-native, distributed applications using Aspire.
 
 ## 📚 Workshop Overview
 
-This workshop teaches you how to build production-ready distributed applications using .NET Aspire - an opinionated, cloud-ready stack for building observable, production-ready distributed applications.
+This workshop teaches you how to build observable, production-ready distributed applications with Aspire.
 
 **What you'll learn:**
 - Model cloud-based applications with code
@@ -14,6 +14,7 @@ This workshop teaches you how to build production-ready distributed applications
 - Build custom resources for specialized scenarios
 - Test distributed applications effectively
 - Deploy to Azure with minimal configuration
+- Use AI coding agents with Aspire-aware lifecycle and diagnostics workflows
 
 ## 🎯 3-Day Workshop Agenda
 
@@ -24,7 +25,7 @@ This workshop teaches you how to build production-ready distributed applications
 - Service discovery and references
 - Basic integrations
 
-**[📖 Start with Lesson 1: Getting Started with .NET Aspire](Exercise/workshop/Lesson-01/README.md)**
+**[📖 Start with Lesson 1: Getting Started with Aspire](Exercise/workshop/Lesson-01/README.md)**
 
 Learn how to add Aspire to an existing application, set up service defaults, create an AppHost for orchestration, and implement service discovery.
 
@@ -52,6 +53,19 @@ Learn how to add Aspire to an existing application, set up service defaults, cre
 **[📖 Advance to Lesson 3: Custom Resources and Testing](Exercise/workshop/Lesson-03/README.md)**
 
 Master the Aspire resource model, build a custom "Talking Clock" resource, and implement comprehensive integration tests.
+
+---
+
+## AI-assisted Aspire workflow
+
+Aspire 13.4 includes first-class support for AI coding agents. The official
+[`microsoft/aspire-skills`](https://github.com/microsoft/aspire-skills) bundle teaches agents
+how to initialize, run, observe, deploy, and wire Aspire applications without falling back to
+ad hoc `dotnet`, Docker, or port-polling workflows.
+
+Follow **[AI coding agents and Aspire skills](docs/ai-agents-and-aspire-skills.md)** to install
+the six workflow skills, configure GitHub Copilot CLI or another supported agent, and use the
+agent-safe `aspire start` → `aspire wait` → `aspire describe` workflow.
 
 ---
 
@@ -104,7 +118,7 @@ Comprehensive testing strategies:
 Publishing and deployment examples:
 
 - **[Aspire Publish](Examples/AspirePublish/)** - Deployment scenarios and manifest generation
-- **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
+- **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with Aspire
 
 ---
 
@@ -113,30 +127,40 @@ Publishing and deployment examples:
 ### Prerequisites
 
 - **.NET 10 SDK** or later - [Download](https://dotnet.microsoft.com/download)
-- **Visual Studio 2026**  or **Visual Studio Code** with C# Dev Kit
-- **Aspire CLI** 
+- **Visual Studio 2026** or **Visual Studio Code** with C# Dev Kit and the [Aspire extension](https://aspire.dev/get-started/aspire-vscode-extension/)
+- **Aspire CLI 13.4** or later - [Install the Aspire CLI](https://aspire.dev/get-started/install-cli/)
 - **Docker Desktop** (for container resources) - [Download](https://www.docker.com/products/docker-desktop)
-- **Node.js 18+** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
+- **Current Node.js LTS** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
 - **Azure Subscription** (optional, for cloud deployment)
 
 ### Setup
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/aspire-workshop.git
+   git clone https://github.com/tamirdresher/aspire-workshop.git
    cd aspire-workshop
    ```
 
-2. **Install .NET Aspire workload**:
+2. **Install the Aspire CLI** (example using the .NET global tool):
    ```bash
-   dotnet new install Aspire.ProjectTemplates
+   dotnet tool install -g Aspire.Cli
+   ```
+   npm, WinGet, Homebrew, mise, and install-script options are documented in the
+   [official installation guide](https://aspire.dev/get-started/install-cli/). Do not install
+   the retired Aspire workload.
+
+3. **Verify the environment**:
+   ```bash
+   aspire --version
+   aspire doctor
    ```
 
-3. **Verify installation**:
+4. **Configure an AI coding agent** (optional):
    ```bash
-   dotnet new list
+   aspire agent init
    ```
-   You should see `aspire` in the installed templates list.
+   See [AI coding agents and Aspire skills](docs/ai-agents-and-aspire-skills.md) for
+   deterministic non-interactive setup and the recommended runtime workflow.
 
 ### Running the Workshop
 
@@ -157,19 +181,21 @@ Run any example to see Aspire in action:
 
 ```bash
 # Run the service orchestration example
-cd Examples/Services
-dotnet run --project AspireCustomResource.AppHost
+aspire run --apphost Examples/Services/AspireCustomResource.AppHost
 
 # Run the testing example
-cd Examples/Testing/src
-dotnet run --project NoteTaker.AppHost
+aspire run --apphost Examples/Testing/src/NoteTaker.AppHost
 
 # Run integration tests
-cd Examples/Testing
-dotnet test
+dotnet test Examples/Testing/src/NoteTaker.Tests/NoteTaker.Tests.csproj
 ```
 
-The Aspire Dashboard will open automatically at `http://localhost:15888` (or similar).
+Use the dashboard URL printed by the Aspire CLI. Dashboard and OTLP ports are assigned
+dynamically for AppHost runs; do not hardcode them in scripts or tests.
+
+> **Using an AI coding agent?** Agents should use background execution with `aspire start`
+> (and `--isolated` in a worktree), then call `aspire wait` before interacting with a resource.
+> See the [agent workflow guide](docs/ai-agents-and-aspire-skills.md).
 
 ---
 
@@ -227,8 +253,10 @@ aspire-workshop/
 │   ├── start/                    # Starting Bookstore application
 │   └── workshop/                 # Lesson guides and solutions
 │       ├── Lesson-01/            # Day 1: Getting started
-│       ├── Lesson-02/            # Day 2: Integrations (coming soon)
+│       ├── Lesson-02/            # Day 2: Integrations and data
 │       └── Lesson-03/            # Day 3: Custom resources & testing
+├── docs/                          # Cross-cutting workshop guidance
+│   └── ai-agents-and-aspire-skills.md
 ├── Examples/                      # Reference implementations
 │   ├── Customizations/           # AppHost customization examples
 │   ├── Integrations/             # Cloud integration examples
@@ -244,6 +272,14 @@ aspire-workshop/
 ## 🤝 Contributing
 
 This workshop is designed to be a living resource. Contributions, issues, and feature requests are welcome!
+
+## 📚 Current Aspire resources
+
+- [Aspire documentation](https://aspire.dev/)
+- [Aspire CLI command reference](https://aspire.dev/reference/cli/commands/aspire/)
+- [Use AI coding agents](https://aspire.dev/get-started/ai-coding-agents/)
+- [Aspire skills](https://aspire.dev/get-started/aspire-skills/)
+- [`microsoft/aspire-skills`](https://github.com/microsoft/aspire-skills)
 
 ## 📄 License
 
