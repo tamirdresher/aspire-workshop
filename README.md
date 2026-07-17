@@ -106,6 +106,11 @@ Publishing and deployment examples:
 - **[Aspire Publish](Examples/AspirePublish/)** - Deployment scenarios and manifest generation
 - **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
 
+### 🟦 Multi-language AppHosts
+Non-C# AppHost entry points:
+
+- **[TypeScript AppHost](Examples/TypeScriptAppHost/)** - GA `apphost.mts` sample orchestrating a Node.js/Express API with `addNodeApp`
+
 ---
 
 ## 🚀 Quick Start
@@ -235,7 +240,8 @@ aspire-workshop/
 │   ├── Services/                 # Service orchestration examples
 │   ├── AspireCustomResource/     # Custom resource examples
 │   ├── Testing/                  # Testing strategies
-│   └── AspirePublish/            # Deployment examples
+│   ├── AspirePublish/            # Deployment examples
+│   └── TypeScriptAppHost/        # GA TypeScript AppHost sample
 └── README.md                     # This file
 ```
 
