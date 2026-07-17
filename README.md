@@ -114,7 +114,7 @@ Publishing and deployment examples:
 
 - **.NET 10 SDK** or later - [Download](https://dotnet.microsoft.com/download)
 - **Visual Studio 2026**  or **Visual Studio Code** with C# Dev Kit
-- **Aspire CLI** 
+- **Aspire CLI 13.4+** - [Install](https://aspire.dev/get-started/install-cli/)
 - **Docker Desktop** (for container resources) - [Download](https://www.docker.com/products/docker-desktop)
 - **Node.js 18+** and npm (for JavaScript examples) - [Download](https://nodejs.org/)
 - **Azure Subscription** (optional, for cloud deployment)
@@ -123,20 +123,36 @@ Publishing and deployment examples:
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/yourusername/aspire-workshop.git
+   git clone https://github.com/tamirdresher/aspire-workshop.git
    cd aspire-workshop
    ```
 
-2. **Install .NET Aspire workload**:
-   ```bash
-   dotnet new install Aspire.ProjectTemplates
+2. **Install the Aspire CLI**:
+
+   **Windows (PowerShell):**
+   ```powershell
+   irm https://aspire.dev/install.ps1 | iex
    ```
+
+   **Linux / macOS (bash):**
+   ```bash
+   curl -sSL https://aspire.dev/install.sh | bash
+   ```
+
+   > Use the Aspire CLI for lifecycle commands and starter templates. Lesson 1
+   > installs the matching `Aspire.ProjectTemplates` package only because it
+   > creates AppHost and Service Defaults projects separately. Aspire 13.4.6 was
+   > the latest stable release when this workshop guidance was validated.
 
 3. **Verify installation**:
    ```bash
-   dotnet new list
+   aspire --version
+   aspire doctor
    ```
-   You should see `aspire` in the installed templates list.
+   `aspire doctor` diagnoses common environment issues (SDK, container runtime,
+   certificates, PATH). See the
+   [CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
+   the full command reference.
 
 ### Running the Workshop
 
@@ -145,31 +161,35 @@ Publishing and deployment examples:
 Follow the progressive lessons to build the Bookstore application:
 
 ```bash
-cd Exercise/start
-dotnet restore
+dotnet restore Exercise/start/Bookstore.sln
 ```
 
 **Then proceed to [Lesson 1](Exercise/workshop/Lesson-01/README.md)** for step-by-step instructions.
 
 #### Explore Examples
 
-Run any example to see Aspire in action:
+Run any example from the repository root. `aspire ls` shows the AppHosts that
+the CLI discovered, and `--apphost` selects one without an interactive prompt:
 
 ```bash
+# Discover AppHosts in this repository
+aspire ls
+
 # Run the service orchestration example
-cd Examples/Services
-dotnet run --project AspireCustomResource.AppHost
+aspire run --apphost Examples/Services/AspireCustomResource.AppHost/AspireCustomResource.AppHost.csproj
 
 # Run the testing example
-cd Examples/Testing/src
-dotnet run --project NoteTaker.AppHost
+aspire run --apphost Examples/Testing/src/NoteTaker.AppHost/NoteTaker.AppHost.csproj
 
-# Run integration tests
-cd Examples/Testing
-dotnet test
+# Run its integration tests
+dotnet test Examples/Testing/src/NoteTaker.slnx
 ```
 
-The Aspire Dashboard will open automatically at `http://localhost:15888` (or similar).
+The Aspire Dashboard opens automatically when the AppHost starts. **Ports are
+assigned dynamically** — read the dashboard URL printed in the CLI output rather
+than assuming a fixed port. See the
+[CLI, Dashboard & Observability guide](docs/cli-dashboard-observability.md) for
+details on the dashboard, telemetry, and the `aspire` CLI.
 
 ---
 
