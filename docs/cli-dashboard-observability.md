@@ -1,19 +1,19 @@
 # Aspire CLI, Dashboard & Observability
 
-> Reference for the current Aspire CLI (13.4+), the developer dashboard, and the
-> built-in observability workflow. Use this alongside the hands-on lessons — the
-> lessons show *what* to build; this guide shows *how to drive and observe* it.
+> Current guidance for driving and observing the workshop AppHosts with the
+> Aspire CLI and developer dashboard.
 
-This guide targets **Aspire CLI 13.4** and later. Command output shown here comes
-from `aspire <command> --help`; run those yourself to see the exact options for
-your installed version.
+This guide was validated on **July 17, 2026** against
+[Aspire 13.4.6](https://github.com/microsoft/aspire/releases/tag/v13.4.6), the
+latest stable release at that time, and the local `aspire <command> --help`
+output. Check [Aspire releases](https://github.com/microsoft/aspire/releases)
+and run `aspire --version` before relying on version-specific behavior.
 
 ---
 
-## 1. Installing the Aspire CLI
+## 1. Install and maintain the Aspire CLI
 
-Aspire is now driven by a standalone **`aspire` CLI** rather than a `dotnet`
-workload. Install it once, globally, and keep it current with `aspire update --self`.
+Aspire uses the standalone **`aspire` CLI**, not the retired .NET workload.
 
 ### Prerequisites
 
@@ -21,12 +21,12 @@ workload. Install it once, globally, and keep it current with `aspire update --s
 - **Docker Desktop** (or another OCI runtime) for container resources
 - **Node.js 18+** for the JavaScript/TypeScript examples
 
-### Install the Aspire CLI
+### Install the CLI
 
 **Windows (PowerShell):**
 
 ```powershell
-iex "& { $(irm https://aspire.dev/install.ps1) }"
+irm https://aspire.dev/install.ps1 | iex
 ```
 
 **Linux / macOS (bash):**
@@ -35,212 +35,244 @@ iex "& { $(irm https://aspire.dev/install.ps1) }"
 curl -sSL https://aspire.dev/install.sh | bash
 ```
 
-**Cross-platform (.NET global tool):**
+Package-manager alternatives:
 
 ```bash
 dotnet tool install -g Aspire.Cli
+npm install -g @microsoft/aspire-cli
 ```
 
-The install script places the CLI under `~/.aspire/bin` (`%USERPROFILE%\.aspire\bin`
-on Windows) and adds it to your `PATH`. Verify the install:
+See the [official installation guide](https://aspire.dev/get-started/install-cli/)
+for WinGet, Homebrew, mise, and platform details. Verify the active binary:
 
 ```bash
 aspire --version
-```
-
-> The `dotnet new install Aspire.ProjectTemplates` workflow from earlier previews
-> is no longer required — the Aspire CLI provisions templates and SDK bits on demand
-> (`aspire new`, `aspire init`, `aspire restore`).
-
-### Keep the CLI up to date
-
-```bash
-aspire update --self            # update the CLI itself
-aspire update                   # update integrations pinned in the AppHost
-aspire update --channel stable  # or: daily
-```
-
-### Verify your environment
-
-Before you start a lesson, confirm your machine is set up correctly:
-
-```bash
 aspire doctor
 ```
 
-`aspire doctor` diagnoses common environment problems (missing SDK, container
-runtime, certificates, PATH issues) and reports pass/fail checks. Add
-`--format json` for scriptable output.
+> The `dotnet new install Aspire.ProjectTemplates` workflow from earlier previews
+> is no longer required. The CLI provisions templates and SDK bits on demand
+> (`aspire new`, `aspire init`, `aspire restore`).
+
+### Update the CLI and AppHost packages
+
+```bash
+aspire update --self
+aspire update --apphost <path-to-apphost>
+aspire update --apphost <path-to-apphost> --channel stable
+```
+
+`aspire update --self` updates install-script binaries directly. Package-managed
+installs print the corresponding npm or .NET tool update command instead of
+overwriting package-manager-owned files.
+
+Automation must explicitly approve project changes:
+
+```bash
+aspire update --apphost <path-to-apphost> --yes --non-interactive
+```
+
+In 13.4, `aspire doctor` reports the CLI version, update notices, the detected
+AppHost SDK version, .NET SDKs, container runtime, certificate status, and
+conflicting CLI installations. Use `--format Json` for machine-readable output.
 
 Trust the local HTTPS development certificate once:
 
 ```bash
-aspire certs
+aspire certs trust
 ```
 
 ---
 
-## 2. Discovering and running AppHosts
+## 2. Discover and run AppHosts
 
 The CLI separates **candidate AppHost files** on disk from **running AppHosts**.
 
 | Task | Command | Notes |
 |------|---------|-------|
-| List AppHost project files in the workspace | `aspire ls` | Add `--format json` for tooling; `--all` ignores `.gitignore`/built-in filters |
+| List AppHost project files in the workspace | `aspire ls` | Add `--format Json` for tooling; `--all` ignores discovery filters |
 | List **running** AppHosts | `aspire ps` | `--follow` streams updates as processes start/stop |
 | Run an AppHost interactively (dev loop) | `aspire run` | Starts the app and streams output; the dashboard URL is printed |
 | Start an AppHost in the background | `aspire start` | Pair with `aspire stop` |
 | Wait for a resource to reach a state | `aspire wait <resource>` | Useful in scripts/CI |
 
 ```bash
-# From the repo root — find AppHosts, then run one
+# From the repository root, find AppHosts and select one explicitly
 aspire ls
-aspire run
+aspire run --apphost Examples/Services/AspireCustomResource.AppHost/AspireCustomResource.AppHost.csproj
 ```
 
 > **`aspire ls` vs `aspire ps`:** `ls` lists candidate AppHost *files*; `ps` lists
-> *running* AppHost processes. Don't use `ls` expecting live resource state.
+> *running* AppHost processes. Use `describe`, not `ps`, for resource state.
+
+This repository contains many AppHosts. Pass `--apphost <path>` to lifecycle and
+diagnostic commands so scripts do not pause for an interactive selection.
 
 ---
 
-## 3. Managing integrations
+## 3. Discover and add integrations
 
 Aspire hosting integrations (Redis, PostgreSQL, Azure services, etc.) are managed
 through `aspire integration` and `aspire add`:
 
 ```bash
-aspire integration list             # browse available hosting integrations
-aspire integration search postgres  # search by keyword
-aspire add redis                    # add an integration to the AppHost
+aspire integration list
+aspire integration search javascript
+aspire add javascript --apphost Exercise/start/Bookstore.AppHost/Bookstore.AppHost.csproj
 ```
 
-`aspire add` wires the package into your AppHost project and updates version pins.
-Use `aspire integration search` to find the exact integration name before adding.
+`integration list` and `integration search` are read-only. `aspire add` modifies
+the selected AppHost and resolves the package version from its configured channel.
+For automation, use `--format Json --non-interactive` with the discovery commands.
 
 ---
 
 ## 4. Inspecting running resources
 
-**Prefer `aspire describe` over parsing raw `aspire ps` data.** `aspire ps` answers
-"which AppHosts are running"; `aspire describe` gives you the structured resource
-graph — resource names, types, states, endpoints, and health — for a running AppHost.
+**Prefer `aspire describe` over parsing `aspire ps`.** `aspire ps` answers which
+AppHosts are running. `aspire describe` returns the resource graph, including
+resource names, types, states, endpoints, and health.
 
 ```bash
 aspire describe                 # all resources in the running AppHost
 aspire describe api             # a single resource by name
-aspire describe --format json   # structured output for tooling
+aspire describe --format Json   # structured output for tooling
 aspire describe --follow        # stream resource state changes live
 aspire describe --include-hidden # include proxies and infra resources
 ```
 
-Use `--include-hidden` when a resource seems "missing" — proxies and infrastructure
+Use `--include-hidden` when a resource seems missing - proxies and infrastructure
 resources are hidden by default.
 
 ---
 
-## 5. Observability from the CLI
+## 5. Search logs, traces, and spans
 
-The Aspire dashboard exposes a telemetry API that the CLI reads directly, so you can
-inspect logs, traces, and spans without leaving the terminal.
+Aspire exposes two complementary log surfaces:
 
-### Logs
+- `aspire logs` reads resource console output (stdout/stderr) through the local
+  AppHost backchannel.
+- `aspire otel ...` reads structured OpenTelemetry data from the dashboard
+  telemetry API.
 
-```bash
-aspire logs                 # logs from all resources
-aspire logs api             # logs for one resource
-aspire logs api --follow    # stream in real time
-aspire logs api --tail 100  # last 100 lines
-aspire logs api --timestamps
-```
-
-### Server-side search
-
-For large log volumes, filter **on the server** instead of piping through `grep`:
+### Console output
 
 ```bash
+aspire logs
+aspire logs api --tail 100 --timestamps
+aspire logs api --follow
 aspire logs api --search "timeout"
 ```
 
-The `--search` flag runs a full-text query against the dashboard telemetry store, so
-you only transfer matching lines. See <https://aka.ms/aspire/cli-search> for query
-syntax.
-
-### OpenTelemetry data (logs, spans, traces)
+Console-log search matches message text and resource names. Structured search
+supports fields and OpenTelemetry attributes:
 
 ```bash
-aspire otel logs api      # structured logs via the telemetry API
-aspire otel spans api     # spans for a resource
-aspire otel traces api    # traces for a resource
+aspire otel logs api --search "severity:error \"connection failed\""
+aspire otel logs --search "resource:api -severity:debug"
+aspire otel traces --search "status:error duration:>500"
+aspire otel traces --search "@http.status_code:500"
+aspire otel spans --search "@http.method:GET duration:>100"
 ```
 
-### Export telemetry for offline analysis or bug reports
+All terms are combined with `AND`. Use quoted phrases, `field:value`,
+`@attribute:value`, negation (`-severity:debug`), and numeric comparisons.
+Filtering happens server-side before output is returned. See the
+[search syntax reference](https://aspire.dev/reference/cli/search-filter/).
 
 ```bash
-aspire export             # export telemetry + resource data to a zip
+aspire otel traces api --has-error
+aspire otel spans --trace-id <trace-id>
+aspire otel logs --trace-id <trace-id>
+```
+
+The last two commands correlate a selected trace with its spans and structured
+logs. Export a portable telemetry and resource snapshot for offline diagnosis:
+
+```bash
+aspire export --output aspire-telemetry.zip
 ```
 
 ---
 
-## 6. The Aspire Dashboard
+## 6. Use the Aspire Dashboard safely
 
-When you run an AppHost (`aspire run`, `aspire start`, or `F5`/`dotnet run` on the
-AppHost), the developer dashboard launches automatically.
+When an AppHost starts through `aspire run`, `aspire start`, or an IDE, the CLI or
+IDE prints an authenticated dashboard login URL.
 
-### Ports are dynamic — read the printed URL
+### AppHost endpoints are dynamic
 
-**Do not assume a fixed dashboard port.** The classic `http://localhost:15888`
-default from earlier previews is no longer guaranteed. The CLI assigns ports
-dynamically (which avoids conflicts in containers and CI) and **prints the dashboard
-URL to the console** when the app starts. Always open the URL from the CLI output.
+Do not hardcode dashboard, resource-service, or OTLP ports. Aspire 13.4 assigns
+the dashboard's supporting ports dynamically. Treat these values as runtime data:
 
-You can also launch the standalone dashboard explicitly:
+- Open the dashboard login URL printed at startup.
+- Use `aspire describe --format Json` for application resource endpoints.
+- Let Aspire inject `OTEL_EXPORTER_OTLP_ENDPOINT` into managed resources.
+- Read runtime configuration in tests instead of copying local port numbers.
+
+### Standalone dashboard
+
+Run a dashboard without an AppHost when any OpenTelemetry-enabled app needs a
+short-lived local telemetry viewer:
 
 ```bash
-aspire dashboard run    # start the dashboard (Preview)
+aspire dashboard run
 ```
 
-The same applies to the **OTLP ingestion endpoint** the dashboard listens on — it is
-assigned at startup and surfaced through environment variables injected into your
-resources (for example `OTEL_EXPORTER_OTLP_ENDPOINT`). Read the endpoint from
-configuration rather than hardcoding a port.
+`aspire dashboard run` is a preview, foreground command; stop it with Ctrl+C.
+Standalone mode has separate documented defaults and explicit endpoint options
+(`--frontend-url`, `--otlp-grpc-url`, and `--otlp-http-url`). Read the startup
+output or set those options deliberately rather than assuming an AppHost's ports.
 
-### Dashboard highlights (Aspire 13.4)
+Paste the full login URL printed by the standalone command into `--dashboard-url`:
 
-- **Resource detail pane** — selecting a resource opens a consolidated pane with its
-  endpoints, environment variables, console logs, and linked telemetry (structured
-  logs, traces, metrics) in one place.
-- **Resource types** — resources are grouped and filterable by type (projects,
-  containers, executables, and cloud/integration resources), making large graphs
-  easier to navigate.
-- **Trace sampling** — the traces view supports sampling so high-volume apps stay
-  responsive; you can drill from a trace into the spans and correlated logs.
-- **Structured logs & traces search** — the Logs and Traces pages support server-side
-  filtering that mirrors the `aspire logs --search` CLI experience.
+```bash
+aspire otel logs --dashboard-url "<dashboard-login-url>" --search "severity:error"
+aspire otel traces --dashboard-url "<dashboard-login-url>" --search "status:error"
+```
 
-For the authoritative, version-specific list of changes, see the official release
-notes: <https://github.com/dotnet/aspire/releases> and the dashboard docs at
-<https://learn.microsoft.com/dotnet/aspire/fundamentals/dashboard/overview>.
+The login URL contains a secret token; do not commit or share it. Standalone mode
+shows telemetry but does not show Aspire resources unless a resource service is
+configured. See the [standalone dashboard guide](https://aspire.dev/dashboard/standalone/).
+
+### Dashboard investigation
+
+- **Resources**: inspect runtime state, health, commands, and generated endpoints.
+- **Console logs**: stream stdout/stderr for a selected resource.
+- **Structured logs**: search by severity, message, resource, trace ID, or attributes.
+- **Traces**: inspect service-to-service flow, errors, spans, and correlated logs.
+- **Metrics**: inspect available instrument measurements for each resource.
 
 ---
 
-## 7. Quick reference
+## 7. Recommended investigation order
+
+1. Run `aspire describe` to check state, health, and endpoints.
+2. Run `aspire otel logs <resource> --search "<query>"` for structured errors.
+3. Run `aspire logs <resource> --tail 100` for process console output.
+4. Run `aspire otel traces <resource> --has-error` for cross-service failures.
+5. Run `aspire export` when a portable diagnostic bundle is needed.
+
+## 8. Quick reference
 
 | Goal | Command |
 |------|---------|
-| Install / update the CLI | `iex "& { $(irm https://aspire.dev/install.ps1) }"` · `aspire update --self` |
+| Install / update the CLI | `irm https://aspire.dev/install.ps1 \| iex` · `aspire update --self` |
+| Update an AppHost | `aspire update --apphost <path> --yes --non-interactive` |
 | Check environment | `aspire doctor` |
 | Find AppHost files | `aspire ls` |
 | List running AppHosts | `aspire ps` |
-| Run the app | `aspire run` |
+| Run the app | `aspire run --apphost <path>` |
 | Add an integration | `aspire integration search <q>` → `aspire add <name>` |
 | Inspect resources | `aspire describe [--follow] [--include-hidden]` |
 | Tail logs | `aspire logs <resource> --follow` |
 | Search logs server-side | `aspire logs <resource> --search "<query>"` |
-| View traces/spans | `aspire otel traces <resource>` |
+| Search structured logs | `aspire otel logs <resource> --search "<query>"` |
+| Search traces | `aspire otel traces <resource> --search "<query>"` |
 | Export telemetry | `aspire export` |
 | Launch dashboard | `aspire dashboard run` |
 
 ---
 
-*Command options were captured from `aspire <command> --help` on Aspire CLI 13.4.
-Run the same commands locally to confirm behavior for your installed version.*
+*Command options were captured from Aspire CLI 13.4.6. Run
+`aspire <command> --help` to confirm behavior for your installed version.*
