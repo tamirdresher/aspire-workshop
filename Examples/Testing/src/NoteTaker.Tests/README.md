@@ -146,7 +146,7 @@ public async Task Frontend_CreateTask_AddsItemToList()
 - .NET 10 SDK
 - Docker Desktop running
 - Python 3.x (for AI service)
-- Playwright browsers installed (automatic on first run)
+- Playwright browsers installed — see First-Time Setup below
 
 ### First-Time Setup
 ```bash
