@@ -1,7 +1,8 @@
-#:package Aspire.Hosting.Docker@13.1.0-preview.1.25616.3
-#:package Aspire.Hosting.Python@13.1.0
+#:sdk Aspire.AppHost.Sdk@13.4.6
+#:property ManagePackageVersionsCentrally=false
 
-#:sdk Aspire.AppHost.Sdk@13.1.0
+#:package Aspire.Hosting.Docker@13.4.6
+#:package Aspire.Hosting.Python@13.4.6
 
 var builder = DistributedApplication.CreateBuilder(args);
 

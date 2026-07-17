@@ -455,13 +455,13 @@ aspire add javascript --apphost Exercise/start/Bookstore.AppHost/Bookstore.AppHo
 ```
 
 `aspire integration search` is read-only. `aspire add` selects the integration
-version for the AppHost's configured channel, so the lesson does not pin an old
-package version.
+version for the AppHost's configured channel. On the stable 13.4.6 SDK used by
+this workshop, it adds `Aspire.Hosting.JavaScript` 13.4.6.
 
 **Visual Studio/VS Code**:
 - Right-click on [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
 - Search for `Aspire.Hosting.JavaScript`
-- Install the current stable version that matches the AppHost SDK
+- Install version `13.4.6` to match the AppHost SDK
 
 ### Step 2: Update AppHost to Add the Admin App
 

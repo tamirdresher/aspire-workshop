@@ -12,7 +12,6 @@ Console.WriteLine("Aspire AppHost Configuration:");
 Console.WriteLine($"  ASPNETCORE_URLS: {builder.Configuration["ASPNETCORE_URLS"] ?? "(using defaults)"}");
 Console.WriteLine($"  ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: {builder.Configuration["ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"] ?? "(not set)"}");
 Console.WriteLine($"  ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL: {builder.Configuration["ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL"] ?? "(not set)"}");
-Console.WriteLine($"  ASPIRE_DASHBOARD_MCP_ENDPOINT_URL: {builder.Configuration["ASPIRE_DASHBOARD_MCP_ENDPOINT_URL"] ?? "(not set)"}");
 Console.WriteLine($"  ASPIRE_ALLOW_UNSECURED_TRANSPORT: {builder.Configuration["ASPIRE_ALLOW_UNSECURED_TRANSPORT"] ?? "(not set)"}");
 
 #pragma warning disable ASPIRECERTIFICATES001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
