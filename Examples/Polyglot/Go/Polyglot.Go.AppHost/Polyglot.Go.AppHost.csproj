@@ -10,13 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!--
-      Aspire.Hosting.Go is not part of this repo's central package pin set (see
-      Directory.Packages.props) because it is not yet needed anywhere else. A dedicated
-      PackageVersion entry was added for it (currently the latest available build, a
-      13.4.x preview) so this example can pick up AddGoApp without touching the pins
-      used by the rest of the workshop.
-    -->
+    <!-- The Go integration is preview-versioned even though the Aspire 13.4.6 SDK is stable. -->
     <PackageReference Include="Aspire.Hosting.Go" />
   </ItemGroup>
 

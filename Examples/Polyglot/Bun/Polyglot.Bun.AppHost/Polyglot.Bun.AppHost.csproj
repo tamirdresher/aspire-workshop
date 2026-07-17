@@ -10,11 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!--
-      AddBunApp requires Aspire.Hosting.JavaScript 13.4+ (this repo's central pin is 13.1.0,
-      used by the other JavaScript examples). VersionOverride keeps the rest of the workshop
-      on 13.1.0 while this example alone picks up the newer, Bun-capable release.
-    -->
+    <!-- AddBunApp requires 13.4; keep the repo's other JavaScript examples on their shared pin. -->
     <PackageReference Include="Aspire.Hosting.JavaScript" VersionOverride="13.4.6" />
   </ItemGroup>
 

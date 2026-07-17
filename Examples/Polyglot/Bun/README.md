@@ -10,7 +10,8 @@ integration and its `AddBunApp(...)` extension method.
 Bun/
 ├── Polyglot.Bun.AppHost/    # Aspire AppHost that orchestrates bun-api
 │   ├── Polyglot.Bun.AppHost.csproj
-│   └── AppHost.cs
+│   ├── AppHost.cs
+│   └── aspire.config.json
 └── bun-api/                 # The Bun service itself
     ├── package.json
     └── index.ts
@@ -24,22 +25,26 @@ Bun/
 ## Prerequisites
 
 - **.NET 10 SDK** or later
+- **Aspire CLI 13.4.6** or later — `aspire --version` should work in your terminal.
+  Install: <https://aspire.dev/get-started/install-cli/>
 - **Bun runtime** available on `PATH` — `bun --version` should work in your terminal.
   Install: <https://bun.sh/docs/installation>
 
 ## How `AddBunApp` works
 
 ```csharp
-var api = builder.AddBunApp("bun-api", "../bun-api", "index.ts")
-    .WithHttpEndpoint(port: 3000, env: "PORT")
+builder.AddBunApp("bun-api", "../bun-api", "index.ts")
+    .WithHttpEndpoint(env: "PORT")
+    .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints();
 ```
 
 - Aspire runs `bun index.ts` from the `bun-api` directory. Bun executes TypeScript directly
   — there's no separate transpile step, unlike `AddNodeApp`/`AddJavaScriptApp`.
-- `WithHttpEndpoint(port: 3000, env: "PORT")` assigns the service a port and passes it to
-  the process via the `PORT` environment variable, which `index.ts` reads via
-  `process.env.PORT` at startup.
+- `WithHttpEndpoint(env: "PORT")` dynamically allocates a port and passes it to the process
+  through the `PORT` environment variable, which `index.ts` reads at startup.
+- `WithHttpHealthCheck("/health")` lets Aspire wait for the service to become healthy.
+- `WithExternalHttpEndpoints()` exposes the endpoint outside the Aspire application network.
 - Because `bun-api` has a `package.json`, Aspire automatically configures Bun as the
   resource's package manager (dependency install, if any, runs via `bun install`).
 - When publishing, Aspire generates a Dockerfile based on the official `oven/bun` image
@@ -50,11 +55,13 @@ var api = builder.AddBunApp("bun-api", "../bun-api", "index.ts")
 
 ```powershell
 cd Examples/Polyglot/Bun/Polyglot.Bun.AppHost
-dotnet run
+aspire start
+aspire wait bun-api
+aspire describe bun-api
 ```
 
-Open the Aspire dashboard URL printed in the console, find the `bun-api` resource, and use
-its endpoint to browse to `/api/hello`.
+Open the Aspire dashboard URL printed by `aspire start`, or append `/api/hello` to the
+external endpoint shown by `aspire describe`. Run `aspire stop` when finished.
 
 ## Validate without running the full app
 

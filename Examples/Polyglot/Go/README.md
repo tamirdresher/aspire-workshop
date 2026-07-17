@@ -10,7 +10,8 @@ Demonstrates orchestrating a **Go** HTTP service from a .NET Aspire AppHost usin
 Go/
 ├── Polyglot.Go.AppHost/     # Aspire AppHost that orchestrates go-api
 │   ├── Polyglot.Go.AppHost.csproj
-│   └── AppHost.cs
+│   ├── AppHost.cs
+│   └── aspire.config.json
 └── go-api/                  # The Go service itself
     ├── go.mod
     └── main.go
@@ -24,25 +25,25 @@ Go/
 ## Prerequisites
 
 - **.NET 10 SDK** or later
+- **Aspire CLI 13.4.6** or later — `aspire --version` should work in your terminal.
+  Install: <https://aspire.dev/get-started/install-cli/>
 - **Go SDK** (1.22+) available on `PATH` — `go version` should work in your terminal.
   Download: <https://go.dev/dl/>
-- Docker Desktop (or another OCI-compatible container runtime), used by Aspire for the
-  dashboard's OpenTelemetry pipeline — not required to run `go-api` itself, since
-  `AddGoApp` runs it as a local process (`go run .`), not a container, in local dev.
 
 ## How `AddGoApp` works
 
 ```csharp
-var api = builder.AddGoApp("go-api", "../go-api")
-    .WithHttpEndpoint(port: 8080, env: "PORT")
-    .WithExternalHttpEndpoints()
-    .WithOtlpExporter();
+builder.AddGoApp("go-api", "../go-api")
+    .WithHttpEndpoint(env: "PORT")
+    .WithHttpHealthCheck("/health")
+    .WithExternalHttpEndpoints();
 ```
 
 - Aspire runs `go run .` from the `go-api` directory (the one containing `go.mod`).
-- `WithHttpEndpoint(port: 8080, env: "PORT")` assigns the service a port and passes it to
-  the process via the `PORT` environment variable, which `main.go` reads at startup.
-- `WithOtlpExporter()` wires up OpenTelemetry export to the Aspire dashboard.
+- `WithHttpEndpoint(env: "PORT")` dynamically allocates a port and passes it to the process
+  through the `PORT` environment variable, which `main.go` reads at startup.
+- `WithHttpHealthCheck("/health")` lets Aspire wait for the service to become healthy.
+- `WithExternalHttpEndpoints()` exposes the endpoint outside the Aspire application network.
 - Build-time flags (`buildTags`, `ldFlags`, `gcFlags`, `raceDetector`) and pre-start module
   commands (`WithModTidy()`, `WithModVendor()`, `WithModDownload()`) are also available as
   parameters/extensions on `AddGoApp`, but aren't needed for this small example.
@@ -51,18 +52,19 @@ var api = builder.AddGoApp("go-api", "../go-api")
 
 ```powershell
 cd Examples/Polyglot/Go/Polyglot.Go.AppHost
-dotnet run
+aspire start
+aspire wait go-api
+aspire describe go-api
 ```
 
-Open the Aspire dashboard URL printed in the console, find the `go-api` resource, and use
-its endpoint to browse to `/api/hello`.
+Open the Aspire dashboard URL printed by `aspire start`, or append `/api/hello` to the
+external endpoint shown by `aspire describe`. Run `aspire stop` when finished.
 
 ## Publish behavior
 
-Running `aspire publish` (or `dotnet run -- --publisher manifest`) against this AppHost
-generates a container image for `go-api` using a Go base image, since Go apps have no
-runtime interpreter to ship alongside source the way Python or JavaScript do — the compiled
-Go binary itself becomes the container's entry point.
+When a publisher emits container build artifacts, Aspire uses `go-api` as the build context
+and generates a multi-stage Dockerfile if the folder doesn't already contain one. The build
+stage compiles a static Linux binary, and the runtime stage runs it as a non-root user.
 
 ## Validate without running the full app
 
@@ -71,10 +73,9 @@ Go binary itself becomes the container's entry point.
 cd Examples/Polyglot/Go/Polyglot.Go.AppHost
 dotnet build
 
-# Confirm the Go service compiles
-# -buildvcs=false avoids a VCS-status error when building inside a larger git repo
+# Compile and test every package without leaving a binary in the source tree
 cd ../go-api
-go build -buildvcs=false ./...
+go test ./...
 ```
 
 ## Package version note
