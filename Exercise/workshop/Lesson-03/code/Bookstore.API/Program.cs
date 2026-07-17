@@ -1,6 +1,5 @@
 using Bookstore.Shared;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Cosmos;
 using Azure.Storage.Queues;
 using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -73,7 +72,6 @@ app.UseHttpsRedirection();
 
 // Initialize Cosmos DB
 Console.WriteLine("Initializing Cosmos DB...");
-CosmosClient cosmosClient;
 QueueClient queueClient;
 
 try
