@@ -103,9 +103,14 @@ Comprehensive testing strategies:
   - [Playwright E2E Tests](Examples/Testing/src/NoteTaker.Tests/PlaywrightIntegrationTests.cs)
 
 ### 📦 Deployment
-Publishing and deployment examples:
+Current publishing and deployment guidance:
 
-- **[Aspire Publish](Examples/AspirePublish/)** - Deployment scenarios and manifest generation
+- **[Publish, Deploy, and Destroy](Examples/AspirePublish/README.md)** - GA Aspire CLI
+  lifecycle, pipeline inspection, CI/CD rules, and teardown safety
+- **[Docker Compose and Kubernetes sample](Examples/AspirePublish/AppHost.cs)** -
+  target-selecting AppHost with generated Compose and Helm artifacts
+- **[Kubernetes and AKS guidance](Examples/AspirePublish/README.md#existing-kubernetes-cluster-target)** -
+  registries, current `kubectl` context, Helm, ingress/Gateway API, TLS, and preview-package boundaries
 - **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
 
 ### 🌐 Polyglot

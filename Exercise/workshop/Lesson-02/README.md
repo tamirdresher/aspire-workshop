@@ -374,13 +374,35 @@ We can customize the cloud resources, such as setting the location or SKU.
     }
     ```
 
-## Step 7: Run and Publish
+## Step 7: Run, Publish, Deploy, and Destroy
 
-1.  **Run Locally**:
-    Start the selected AppHost using the command in [Choose Your AppHost Track](#choose-your-apphost-track). For the C# track, ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that Redis, Cosmos DB, and Storage use their local containers.
+`UseCloudResources` selects emulator or Azure-backed integrations inside the application
+model. It does **not** select a compute deployment target. Azure resources can contribute
+infrastructure steps without a compute target, but publishing or deploying the application
+services as workloads requires a deployment environment such as:
 
-2.  **Publish to Azure**:
-    Use `aspire publish --apphost <AppHost-directory>` to produce deployment artifacts for the selected AppHost. For the C# track, set `UseCloudResources` to `true` when exercising its custom infrastructure branch.
+* `AddDockerComposeEnvironment("env")` for Docker Compose.
+* `AddKubernetesEnvironment("k8s")` for an existing Kubernetes cluster.
+* `AddAzureKubernetesEnvironment("aks")` for Aspire-provisioned AKS.
+* `AddAzureContainerAppEnvironment("aca")` for Azure Container Apps.
+
+This lesson uses `AddDockerComposeEnvironment("env")` as its compute target. In a multi-target
+AppHost, add only the environment selected by configuration. The runnable [AspirePublish
+example](../../../Examples/AspirePublish/README.md) shows that pattern for Docker Compose and
+Kubernetes.
+
+The React admin is published with `PublishAsStaticWebsite("/api", api, ...)`: Aspire builds
+the static files, serves them from a YARP container, and proxies `/api` to the API through
+service discovery. The Vite development proxy mirrors that route locally. This publishing API
+is experimental in 13.4, so the AppHost scopes its `ASPIREJAVASCRIPT001` suppression to that
+call. Using `PublishAsDockerFile()` alone for a static JavaScript app creates a build-only
+image and deployment validation rejects it unless another resource consumes the files.
+
+The Bookstore still declares Azure Cosmos DB and Storage resources. Their emulator overrides
+apply to local orchestration, while `publish` and `deploy` contribute Azure Bicep and
+provisioning steps. Authenticate with `az login`, provide a subscription and location, and use
+an isolated resource group before deploying this topology. Its destroy pipeline runs both
+Compose teardown and Azure resource-group teardown.
 
 ## Summary
 
