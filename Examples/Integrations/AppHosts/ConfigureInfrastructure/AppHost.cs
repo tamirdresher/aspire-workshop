@@ -1,7 +1,8 @@
-#:package Aspire.Hosting.Azure.Storage@13.1.0
-#:package Azure.Provisioning.Storage@1.1.2
+#:sdk Aspire.AppHost.Sdk@13.4.6
+#:property ManagePackageVersionsCentrally=false
 
-#:sdk Aspire.AppHost.Sdk@13.1.0
+#:package Aspire.Hosting.Azure.Storage@13.4.6
+#:package Azure.Provisioning.Storage@1.1.2
 
 using Azure.Provisioning.Storage;
 

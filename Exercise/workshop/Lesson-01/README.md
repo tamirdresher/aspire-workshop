@@ -427,13 +427,13 @@ The AppHost needs a NuGet package to support JavaScript applications.
 
 **Command Line**:
 ```bash
-dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj package Aspire.Hosting.JavaScript --version 13.1.0
+dotnet add start/Bookstore.AppHost/Bookstore.AppHost.csproj package Aspire.Hosting.JavaScript --version 13.4.6
 ```
 
 **Visual Studio/VS Code**:
 - Right-click on [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
 - Search for `Aspire.Hosting.JavaScript`
-- Install version `13.1.0`
+- Install version `13.4.6`
 
 ### Step 2: Update AppHost to Add the Admin App
 
