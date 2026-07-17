@@ -13,6 +13,9 @@
     <PackageVersion Include="Aspire.Hosting.Azure.CosmosDB" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Azure.Storage" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Docker" Version="13.4.6" />
+    <!-- Aspire.Hosting.Go is preview-versioned in Aspire 13.4; this build matches the stable
+         13.4.6 AppHost SDK used by Examples/Polyglot/Go. -->
+    <PackageVersion Include="Aspire.Hosting.Go" Version="13.4.6-preview.1.26319.6" />
     <PackageVersion Include="Aspire.Hosting.JavaScript" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Python" Version="13.4.6" />

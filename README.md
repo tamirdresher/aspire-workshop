@@ -117,10 +117,22 @@ Comprehensive testing strategies:
   - [Playwright E2E Tests](Examples/Testing/src/NoteTaker.Tests/PlaywrightIntegrationTests.cs)
 
 ### 📦 Deployment
-Publishing and deployment examples:
+Current publishing and deployment guidance:
 
 - **[Aspire Publish](Examples/AspirePublish/)** - Deployment scenarios and manifest generation
-- **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with Aspire
+- **[Publish, Deploy, and Destroy](Examples/AspirePublish/README.md)** - GA Aspire CLI
+  lifecycle, pipeline inspection, CI/CD rules, and teardown safety
+- **[Docker Compose and Kubernetes sample](Examples/AspirePublish/AppHost.cs)** -
+  target-selecting AppHost with generated Compose and Helm artifacts
+- **[Kubernetes and AKS guidance](Examples/AspirePublish/README.md#existing-kubernetes-cluster-target)** -
+  registries, current `kubectl` context, Helm, ingress/Gateway API, TLS, and preview-package boundaries
+- **[Python Service](Examples/AspirePublish/python-service/)** - Orchestrating Python services with .NET Aspire
+
+### 🌐 Polyglot
+Orchestrating non-.NET services alongside .NET:
+
+- **[Go](Examples/Polyglot/Go/)** - Hosting a Go HTTP service with `Aspire.Hosting.Go` and `AddGoApp(...)`
+- **[Bun](Examples/Polyglot/Bun/)** - Hosting a Bun HTTP service with `Aspire.Hosting.JavaScript` and `AddBunApp(...)`
 
 ### 🟦 Multi-language AppHosts
 Non-C# AppHost entry points:
@@ -304,6 +316,7 @@ aspire-workshop/
 │   ├── AspireCustomResource/     # Custom resource examples
 │   ├── Testing/                  # Testing strategies
 │   ├── AspirePublish/            # Deployment examples
+│   ├── Polyglot/                 # Go and Bun polyglot examples
 │   └── TypeScriptAppHost/        # GA TypeScript AppHost sample
 └── README.md                     # This file
 ```
