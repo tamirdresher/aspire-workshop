@@ -9,6 +9,105 @@ In this lesson, we will enhance our Bookstore application by adding data persist
 3.  Use **Entity Framework Core** to interact with Cosmos DB.
 4.  Add **Health Checks** to monitor the status of our services.
 
+## Choose Your AppHost Track
+
+Continue with the same AppHost language you selected in Lesson 1. The application projects and integration client code are shared; only the orchestration model differs.
+
+| Track | AppHost model |
+| --- | --- |
+| C# | [`code/Bookstore.AppHost/Program.cs`](./code/Bookstore.AppHost/Program.cs) |
+| TypeScript | [`code/Bookstore.TypeScriptAppHost/apphost.mts`](./code/Bookstore.TypeScriptAppHost/apphost.mts) |
+
+Docker Desktop must be running for Redis, the Cosmos DB emulator, and Azurite. From the lesson's `code` directory, prepare the shared projects:
+
+```bash
+cd Exercise/workshop/Lesson-02/code
+dotnet restore Bookstore.sln
+npm --prefix Bookstore.Admin ci
+```
+
+Start the **C# AppHost**:
+
+```bash
+aspire run --apphost Bookstore.AppHost/Bookstore.AppHost.csproj
+```
+
+Or prepare and start the **TypeScript AppHost**:
+
+```bash
+npm --prefix Bookstore.TypeScriptAppHost ci
+aspire restore --apphost Bookstore.TypeScriptAppHost
+npm --prefix Bookstore.TypeScriptAppHost run build
+npm --prefix Bookstore.TypeScriptAppHost run dev
+```
+
+The `dev` script performs a Release solution build before the TypeScript AppHost starts the shared .NET projects together, preventing concurrent first-build output races on Windows. The TypeScript AppHost uses the GA `apphost.mts` shape and Aspire `13.4.6`. Its generated `.aspire/modules` API is recreated by `aspire restore` and must not be edited. Press `Ctrl+C` to stop the selected track.
+
+The AppHost-specific snippets in the steps below use C#. The complete TypeScript equivalent is:
+
+```typescript
+import { createBuilder } from './.aspire/modules/aspire.mjs';
+
+const builder = await createBuilder();
+const cache = builder.addRedis('cache');
+
+const cosmos = builder
+  .addAzureCosmosDB('cosmos-account')
+  .runAsEmulator({
+    configureContainer: async (emulator) => {
+      await emulator.withGatewayPort({ port: 7777 });
+    },
+  })
+  .addCosmosDatabase('cosmos');
+
+await cosmos.addContainer('books', '/id');
+await cosmos.addContainer('carts', '/id');
+await cosmos.addContainer('orders', '/id');
+
+const queue = builder
+  .addAzureStorage('storage')
+  .runAsEmulator()
+  .addQueues('queue');
+
+const api = builder
+  .addProject('api', '../Bookstore.API/Bookstore.API.csproj')
+  .withReference(cache)
+  .withReference(cosmos)
+  .withReference(queue)
+  .waitFor(cache)
+  .waitFor(cosmos)
+  .waitFor(queue)
+  .withHttpCommand('/seed', 'Seed data', {
+    description: 'Add sample books to the catalog.',
+    iconName: 'Database',
+    isHighlighted: true,
+    methodName: 'POST',
+  });
+
+await builder
+  .addProject('web', '../Bookstore.Web/Bookstore.Web/Bookstore.Web.csproj')
+  .withReference(api)
+  .waitFor(api)
+  .withReference(cache)
+  .waitFor(cache)
+  .withExternalHttpEndpoints();
+
+await builder
+  .addProject('worker', '../Bookstore.Worker/Bookstore.Worker.csproj')
+  .withReference(api)
+  .waitFor(api)
+  .withReference(queue)
+  .waitFor(queue);
+
+await builder
+  .addViteApp('admin', '../Bookstore.Admin')
+  .withReference(api)
+  .waitFor(api)
+  .withExternalHttpEndpoints();
+
+await builder.build().run();
+```
+
 ## Step 1: Add Redis for Caching
 
 We'll start by adding a Redis cache to our application to store the output of our API endpoints.
@@ -152,8 +251,10 @@ We will add an Azure Storage Queue to handle background processing tasks.
 We can add custom commands to the Aspire Dashboard to perform actions on our resources.
 
 1.  **Add Command Extensions**:
-    Create a new file `Bookstore.AppHost/ApiCommandExtensions.cs` and add the extension methods for adding commands to add seeding data to the databse.
+    Create a new file `Bookstore.AppHost/ApiCommandExtensions.cs` and add the extension methods for seeding the database.
     *(This file is provided in the `code/Bookstore.AppHost` directory of this lesson)*
+
+    The callback command uses a typed Boolean argument, health-aware command state, a confirmation prompt, explicit dashboard/API visibility, and a text result that can open in the dashboard. The HTTP command sends the required `POST` request and displays its response body.
 
 2.  **Register Commands**:
     In `Bookstore.AppHost/Program.cs`, use the extension methods to add commands to the API resource:
@@ -165,9 +266,21 @@ We can add custom commands to the Aspire Dashboard to perform actions on our res
         .WithSeedHttpCommand();
     ```
 
-## Step 5: Configure Cloud Resources
+    The TypeScript track does not need a C# extension file. Its API registration calls `withHttpCommand('/seed', 'Seed data', { methodName: 'POST', ... })`, which exposes the same HTTP seed action in the dashboard.
+
+    After the C# AppHost starts, the callback command can also be invoked from a separate terminal:
+
+    ```bash
+    aspire resource api seed-db --show-response --apphost Exercise/workshop/Lesson-02/code/Bookstore.AppHost/Bookstore.AppHost.csproj
+    ```
+
+    `InteractionInput.Name` becomes the CLI option name, so command arguments are passed as named options.
+
+## Step 5: Configure Cloud Resources (C# Track)
 
 Now we will add logic to support deploying to Azure Cloud resources or using the local emulator based on configuration.
+
+The TypeScript AppHost's `runAsEmulator()` calls apply in run mode; publish mode retains the underlying Azure Cosmos DB and Storage resources. The explicit `UseCloudResources` switch in this step is the C# customization path.
 
 1.  **Add NuGet Packages**:
     Add the necessary NuGet packages to the AppHost project:
@@ -229,7 +342,7 @@ Now we will add logic to support deploying to Azure Cloud resources or using the
     }
     ```
 
-## Step 6: Add Customizations
+## Step 6: Add Customizations (C# Track)
 
 We can customize the cloud resources, such as setting the location or SKU.
 
@@ -264,11 +377,11 @@ We can customize the cloud resources, such as setting the location or SKU.
 ## Step 7: Run and Publish
 
 1.  **Run Locally**:
-    Run the application with `aspire run`. Ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that the emulators are used.
+    Start the selected AppHost using the command in [Choose Your AppHost Track](#choose-your-apphost-track). For the C# track, ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that Redis, Cosmos DB, and Storage use their local containers.
 
 2.  **Publish to Azure**:
-    To deploy to Azure, you would typically set `UseCloudResources` to `true` (or override it via environment variables) and use `azd up` or `dotnet publish`.
+    Use `aspire publish --apphost <AppHost-directory>` to produce deployment artifacts for the selected AppHost. For the C# track, set `UseCloudResources` to `true` when exercising its custom infrastructure branch.
 
 ## Summary
 
-You have successfully integrated Redis, Cosmos DB, and Azure Storage, added custom commands, and configured your application for both local development with emulators and cloud deployment with customizations!
+You have integrated Redis, Cosmos DB, and Azure Storage, added a dashboard seed command, and run the same Bookstore topology from either a C# or TypeScript AppHost. The C# track also demonstrates custom Azure infrastructure settings.

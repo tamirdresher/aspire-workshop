@@ -1,8 +1,9 @@
-#:sdk Aspire.AppHost.Sdk@13.1.0
+#:sdk Aspire.AppHost.Sdk@13.4.6
+#:property ManagePackageVersionsCentrally=false
 
-#:package Aspire.Hosting.Azure.Storage@13.1.0
-#:package Aspire.Hosting.Azure.CosmosDB@13.1.0
-#:package Aspire.Hosting.Azure.AIFoundry@13.0.2-preview.1.25603.5
+#:package Aspire.Hosting.Azure.Storage@13.4.6
+#:package Aspire.Hosting.Azure.CosmosDB@13.4.6
+#:package Aspire.Hosting.Foundry@13.4.6-preview.1.26319.6
 
 #pragma warning disable ASPIRECOSMOSDB001
 
@@ -22,7 +23,7 @@ var cosmos = builder.AddAzureCosmosDB("restaurant")
     
 var dishes = cosmos.AddContainer("dish", "/id");
 
-var foundry = builder.AddAzureAIFoundry("foundry")
+var foundry = builder.AddFoundry("foundry")
         .RunAsFoundryLocal();
 
 var chat = foundry.AddDeployment("chat", "phi-3.5-mini", "1", "Microsoft");

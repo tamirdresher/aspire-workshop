@@ -843,3 +843,6 @@ tmp/
 **/FastAPI_starter.egg-info/*
 Examples/Integrations/AppHosts/CustomizeContainerResources/ollama/id_ed25519
 Examples/Integrations/AppHosts/CustomizeContainerResources/ollama/id_ed25519.pub
+
+# Aspire CLI integration cache
+**/.aspire/integrations/

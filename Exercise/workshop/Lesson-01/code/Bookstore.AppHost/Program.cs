@@ -9,11 +9,9 @@ builder.AddProject<Projects.Bookstore_Web>("web")
     .WithExternalHttpEndpoints();
 
 // Add Admin React app (Node.js)
-var admin = builder.AddJavaScriptApp("admin", "../Bookstore.Admin")
+builder.AddViteApp("admin", "../Bookstore.Admin")
     .WithReference(api)
-    .WithHttpEndpoint(env: "PORT")
-    .WithExternalHttpEndpoints()
-    .PublishAsDockerFile();
+    .WithExternalHttpEndpoints();
 
 // Add Worker service for book descriptions
 builder.AddProject<Projects.Bookstore_Worker>("worker")
