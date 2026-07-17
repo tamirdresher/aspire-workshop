@@ -29,7 +29,7 @@ npm --prefix Bookstore.Admin ci
 Start the **C# AppHost**:
 
 ```bash
-aspire start --apphost Bookstore.AppHost
+aspire run --apphost Bookstore.AppHost/Bookstore.AppHost.csproj
 ```
 
 Or prepare and start the **TypeScript AppHost**:
@@ -38,11 +38,10 @@ Or prepare and start the **TypeScript AppHost**:
 npm --prefix Bookstore.TypeScriptAppHost ci
 aspire restore --apphost Bookstore.TypeScriptAppHost
 npm --prefix Bookstore.TypeScriptAppHost run build
-dotnet build Bookstore.sln -c Release --no-restore
-aspire start --apphost Bookstore.TypeScriptAppHost
+npm --prefix Bookstore.TypeScriptAppHost run dev
 ```
 
-The Release build prevents concurrent first-run builds of the shared .NET projects when the TypeScript AppHost starts them together. The TypeScript AppHost uses the GA `apphost.mts` shape and Aspire `13.4.6`. Its generated `.aspire/modules` API is recreated by `aspire restore` and must not be edited. Stop the selected track with `aspire stop --apphost <AppHost-directory>`.
+The `dev` script performs a Release solution build before the TypeScript AppHost starts the shared .NET projects together, preventing concurrent first-build output races on Windows. The TypeScript AppHost uses the GA `apphost.mts` shape and Aspire `13.4.6`. Its generated `.aspire/modules` API is recreated by `aspire restore` and must not be edited. Press `Ctrl+C` to stop the selected track.
 
 The AppHost-specific snippets in the steps below use C#. The complete TypeScript equivalent is:
 
@@ -252,8 +251,10 @@ We will add an Azure Storage Queue to handle background processing tasks.
 We can add custom commands to the Aspire Dashboard to perform actions on our resources.
 
 1.  **Add Command Extensions**:
-    Create a new file `Bookstore.AppHost/ApiCommandExtensions.cs` and add the extension methods for seeding data.
+    Create a new file `Bookstore.AppHost/ApiCommandExtensions.cs` and add the extension methods for seeding the database.
     *(This file is provided in the `code/Bookstore.AppHost` directory of this lesson)*
+
+    The callback command uses a typed Boolean argument, health-aware command state, a confirmation prompt, explicit dashboard/API visibility, and a text result that can open in the dashboard. The HTTP command sends the required `POST` request and displays its response body.
 
 2.  **Register Commands**:
     In `Bookstore.AppHost/Program.cs`, use the extension methods to add commands to the API resource:
@@ -266,6 +267,14 @@ We can add custom commands to the Aspire Dashboard to perform actions on our res
     ```
 
     The TypeScript track does not need a C# extension file. Its API registration calls `withHttpCommand('/seed', 'Seed data', { methodName: 'POST', ... })`, which exposes the same HTTP seed action in the dashboard.
+
+    After the C# AppHost starts, the callback command can also be invoked from a separate terminal:
+
+    ```bash
+    aspire resource api seed-db --show-response --apphost Exercise/workshop/Lesson-02/code/Bookstore.AppHost/Bookstore.AppHost.csproj
+    ```
+
+    `InteractionInput.Name` becomes the CLI option name, so command arguments are passed as named options.
 
 ## Step 5: Configure Cloud Resources (C# Track)
 
@@ -368,7 +377,7 @@ We can customize the cloud resources, such as setting the location or SKU.
 ## Step 7: Run and Publish
 
 1.  **Run Locally**:
-    From the lesson's `code` directory, run `aspire start --apphost Bookstore.AppHost` for C# or `aspire start --apphost Bookstore.TypeScriptAppHost` for TypeScript. For the C# track, ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that Redis, Cosmos DB, and Storage use their local containers.
+    Start the selected AppHost using the command in [Choose Your AppHost Track](#choose-your-apphost-track). For the C# track, ensure `UseCloudResources` is `false` in `appsettings.json`. Verify that Redis, Cosmos DB, and Storage use their local containers.
 
 2.  **Publish to Azure**:
     Use `aspire publish --apphost <AppHost-directory>` to produce deployment artifacts for the selected AppHost. For the C# track, set `UseCloudResources` to `true` when exercising its custom infrastructure branch.
