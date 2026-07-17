@@ -72,8 +72,9 @@ cd Examples/Polyglot/Go/Polyglot.Go.AppHost
 dotnet build
 
 # Confirm the Go service compiles
+# -buildvcs=false avoids a VCS-status error when building inside a larger git repo
 cd ../go-api
-go build ./...
+go build -buildvcs=false ./...
 ```
 
 ## Package version note
