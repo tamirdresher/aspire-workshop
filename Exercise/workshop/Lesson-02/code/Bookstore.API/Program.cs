@@ -1,5 +1,6 @@
 using Bookstore.Shared;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Azure.Storage.Queues;
 using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -112,7 +113,7 @@ catch (Exception ex)
     Console.WriteLine($"Error initializing Cosmos DB: {ex}");
 }
 
-app.MapPost("/seed", async (BookstoreRepository repository) =>
+app.MapPost("/seed", async (BookstoreRepository repository, IOutputCacheStore cacheStore, CancellationToken ct) =>
 {
     var existingBooks = await repository.GetBooksAsync();
 
@@ -131,6 +132,11 @@ app.MapPost("/seed", async (BookstoreRepository repository) =>
         {
             await repository.CreateBookAsync(book);
         }
+
+        // Invalidate the cached /books response so the newly seeded data is
+        // returned on the next GET /books call instead of a stale empty list.
+        await cacheStore.EvictByTagAsync("books", ct);
+
         return Results.Ok("Database seeded successfully.");
     }
     return Results.Ok("Database already contains data.");
@@ -143,7 +149,7 @@ app.MapGet("/books", async (BookstoreRepository repository) =>
     var books = await repository.GetBooksAsync();
     return Results.Ok(books);
 })
-.CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(5)))
+.CacheOutput(policy => policy.Expire(TimeSpan.FromMinutes(5)).Tag("books"))
 .WithName("GetBooks");
 
 app.MapGet("/books/{id}", async (string id, BookstoreRepository repository) =>
