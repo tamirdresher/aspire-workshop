@@ -178,7 +178,7 @@ Non-C# AppHost entry points:
 
 3. **Install the matching granular project templates**:
    ```bash
-   dotnet new install Aspire.ProjectTemplates::13.4.6
+   dotnet new install Aspire.ProjectTemplates@13.4.6
    ```
 
    > Use the Aspire CLI for lifecycle commands and starter templates. Lesson 1

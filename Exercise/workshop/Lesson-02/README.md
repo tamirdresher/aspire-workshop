@@ -43,6 +43,21 @@ npm --prefix Bookstore.TypeScriptAppHost run dev
 
 The `dev` script performs a Release solution build before the TypeScript AppHost starts the shared .NET projects together, preventing concurrent first-build output races on Windows. The TypeScript AppHost uses the GA `apphost.mts` shape and Aspire `13.4.6`. Its generated `.aspire/modules` API is recreated by `aspire restore` and must not be edited. Press `Ctrl+C` to stop the selected track.
 
+> **⚠️ First-run note: Cosmos DB emulator cold start**
+> The Cosmos DB emulator container can take **1–3 minutes** to become healthy on its
+> very first launch (it initialises data files and warms the gateway on port `7777`).
+> On the first `aspire run` / `npm run dev`, the `api` resource may fail health checks
+> and go **Unhealthy** before the emulator is ready, which shows up as the API
+> repeatedly restarting or failing to serve requests.
+>
+> If that happens on your first start:
+>
+> 1. Press `Ctrl+C` to stop the AppHost.
+> 2. Wait until the `cosmos-account` container reports **Running** / healthy in the dashboard.
+> 3. Start the AppHost again with the same `aspire run` / `npm run dev` command.
+>
+> On the second start the emulator is already warm and every resource comes up cleanly.
+
 The AppHost-specific snippets in the steps below use C#. The complete TypeScript equivalent is:
 
 ```typescript

@@ -32,7 +32,7 @@ root. This lesson creates AppHost and Service Defaults as separate projects, so
 install the matching granular templates once:
 
 ```bash
-dotnet new install Aspire.ProjectTemplates::13.4.6
+dotnet new install Aspire.ProjectTemplates@13.4.6
 ```
 
 ## Starting Point
@@ -77,6 +77,23 @@ npm --prefix Bookstore.TypeScriptAppHost run dev
 ```
 
 The `dev` script performs a Release solution build before the TypeScript AppHost starts the shared .NET projects together, preventing concurrent first-build output races on Windows. The TypeScript track pins the Aspire SDK and JavaScript hosting integration to `13.4.6`. `aspire restore` generates the local `.aspire/modules` API; do not edit those generated files. Press `Ctrl+C` to stop the selected AppHost.
+
+> **⚠️ Windows + agent workflow (direct `aspire start`)**
+> The `npm run dev` script above already runs `dotnet build Bookstore.sln -c Release`
+> before starting the TypeScript AppHost, which is why it is the recommended path for humans.
+>
+> If you (or an AI coding agent) instead launch the TypeScript AppHost directly with
+> `aspire start --apphost Bookstore.TypeScriptAppHost` on Windows, run the Release
+> solution build **first**, from the same `Exercise/workshop/Lesson-01/code` directory:
+>
+> ```bash
+> dotnet build Bookstore.sln -c Release
+> aspire start --apphost Bookstore.TypeScriptAppHost
+> ```
+>
+> Without the prior build, the API, Web, Worker, and ServiceDefaults projects all
+> compile in parallel on their first run and race to write the same `obj/`/`bin/`
+> outputs, which surfaces on Windows as `CS2012: cannot open '...Bookstore.ServiceDefaults.dll' for writing` (or a similar per-project variant).
 
 ---
 
