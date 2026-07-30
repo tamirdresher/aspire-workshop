@@ -14,6 +14,9 @@ const files = [
 for (const file of files) {
   const content = readFileSync(resolve(root, file), "utf8");
   if (!content.trim()) throw new Error(`${file} is empty`);
+  if (new RegExp("\\." + "NET\\s+Aspire", "i").test(content)) {
+    throw new Error(`${file} uses deprecated Aspire terminology`);
+  }
 }
 
 const runbook = readFileSync(resolve(root, "facilitator-runbook.md"), "utf8");

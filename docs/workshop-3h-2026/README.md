@@ -1,4 +1,4 @@
-# .NET Aspire in 3 Hours
+# Aspire in 3 Hours
 
 A beginner-friendly, hands-on-first workshop that turns the Bookstore sample into an observable distributed application, adds data integrations, gives an AI coding agent Aspire-aware workflows, and finishes by inspecting publish/deploy pipelines.
 
