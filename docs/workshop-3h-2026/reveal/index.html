@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>.NET Aspire in 3 Hours</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../node_modules/reveal.js/dist/reveal.css">
+  <link rel="stylesheet" href="../node_modules/reveal.js/dist/theme/black.css">
+  <link rel="stylesheet" href="../node_modules/reveal.js/plugin/highlight/monokai.css">
+  <link rel="stylesheet" href="./assets/workshop.css">
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <h1>.NET Aspire in 3 Hours</h1>
+        <p class="subtitle">Build, observe, integrate, agent-enable, and publish a distributed app</p>
+        <p><span class="badge">Beginner</span><span class="badge">Hands-on first</span><span class="badge">Aspire 13.4.6+</span></p>
+        <div class="presenter">
+          <p><strong>Tamir Dresher</strong></p>
+          <p>Principal Engineer @ Microsoft Security · .NET Bond Leadership</p>
+          <p><a href="https://tamirdresher.com">tamirdresher.com</a> · <a href="https://aspire.dev">aspire.dev</a></p>
+        </div>
+        <aside class="notes">Welcome. The outcome is practical: one application model, one dashboard, safe agent workflows, and deployable artifacts.</aside>
+      </section>
+
+      <section>
+        <h2>Today: 180 minutes, 72% hands-on</h2>
+        <div class="two-column small">
+          <div class="card">
+            <h3>Build + observe</h3>
+            <p><span class="clock">00:00–01:20</span></p>
+            <ul>
+              <li>Preflight + mental model</li>
+              <li>Lab 1: defaults + AppHost</li>
+              <li>Lab 2: discovery + dashboard</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Integrate + automate</h3>
+            <p><span class="clock">01:20–03:00</span></p>
+            <ul>
+              <li>10-minute break</li>
+              <li>Lab 3: data integrations</li>
+              <li>Lab 4: agents + skills</li>
+              <li>Lab 5: publish walkthrough</li>
+            </ul>
+          </div>
+        </div>
+        <p class="takeaway">Five dedicated labs = <strong>130 minutes</strong>. Explanations stay short.</p>
+      </section>
+
+      <section>
+        <h2>Preflight: prove the machine is ready</h2>
+        <pre><code class="language-bash">dotnet --version
+node --version
+npm --version
+aspire --version
+aspire doctor
+docker version</code></pre>
+        <div class="two-column small">
+          <div class="card">
+            <h3>Expected</h3>
+            <p>.NET 10 · Node 20.19+ · Aspire 13.4.6+ · running Docker server</p>
+          </div>
+          <div class="card warning">
+            <h3>npm proxy</h3>
+            <code>https://packagefeedproxy.microsoft.io/npm/</code>
+            <p>Pass with <code>--registry</code>. Never store secrets.</p>
+          </div>
+        </div>
+        <p class="small"><a href="../preflight-checklist.md">Open the complete preflight checklist</a></p>
+      </section>
+
+      <section>
+        <h2>The local-dev problem</h2>
+        <div class="two-column">
+          <div>
+            <h3>Without an application model</h3>
+            <ul>
+              <li>Start five processes manually</li>
+              <li>Copy ports into config</li>
+              <li>Wait and retry by hand</li>
+              <li>Search disconnected logs</li>
+              <li>Rewrite topology for deployment</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Aspire's promise</h3>
+            <p>Model resources and relationships once, then use that model for orchestration, discovery, observability, and deployment pipelines.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>The beginner mental model</h2>
+        <div class="flow">
+          <div class="flow-box"><strong>AppHost</strong><br><span class="small">model</span></div>
+          <div class="arrow">→</div>
+          <div class="flow-box"><strong>Resources</strong><br><span class="small">apps + infra</span></div>
+          <div class="arrow">→</div>
+          <div class="flow-box"><strong>References</strong><br><span class="small">config + discovery</span></div>
+          <div class="arrow">→</div>
+          <div class="flow-box"><strong>Dashboard</strong><br><span class="small">state + telemetry</span></div>
+        </div>
+        <div class="takeaway">Aspire orchestrates your development environment. It is not a replacement for ASP.NET Core, containers, or your cloud platform.</div>
+      </section>
+
+      <section>
+        <h2>Two projects, two responsibilities</h2>
+        <div class="two-column">
+          <div class="card">
+            <h3>Service Defaults</h3>
+            <ul>
+              <li>OpenTelemetry</li>
+              <li>Health endpoints</li>
+              <li>Service discovery</li>
+              <li>Resilient HTTP</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>AppHost</h3>
+            <ul>
+              <li>Resource graph</li>
+              <li>Lifecycle + dependencies</li>
+              <li>Environment injection</li>
+              <li>Publish/deploy targets</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="lab" data-lab="1">
+        <h2>1 · Service Defaults + AppHost <span class="clock">30 min</span></h2>
+        <div class="lab-grid tiny">
+          <div>
+            <div class="lab-box"><h3>Objective</h3><p>Run Lesson 1 and explain what Service Defaults and AppHost each own.</p></div>
+            <div class="lab-box"><h3>Do this</h3><p>Restore/build; inspect <code>Extensions.cs</code> and AppHost <code>Program.cs</code>; launch dashboard.</p></div>
+            <div class="lab-box success"><h3>Success criteria</h3><p>Build passes; dashboard shows <code>api</code>, <code>web</code>, <code>worker</code>, <code>admin</code>; API/Web healthy.</p></div>
+          </div>
+          <div>
+            <div class="lab-box"><h3>Commands</h3><pre><code class="language-bash">cd Exercise/workshop/Lesson-01/code
+dotnet restore Bookstore.sln
+npm --prefix Bookstore.Admin ci --registry=https://packagefeedproxy.microsoft.io/npm/
+dotnet build Bookstore.sln
+aspire run --apphost Bookstore.AppHost/Bookstore.AppHost.csproj</code></pre></div>
+            <div class="lab-box follow"><h3>Follow here:</h3><p><a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Exercise/workshop/Lesson-01/README.md#part-a-add-service-defaults-project">Lesson 1 Part A</a> + <a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Exercise/workshop/Lesson-01/README.md#part-b-add-app-host-project">Part B</a></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>References create runtime wiring</h2>
+        <pre><code class="language-csharp">var api = builder.AddProject&lt;Projects.Bookstore_API&gt;("api");
+
+builder.AddProject&lt;Projects.Bookstore_Web&gt;("web")
+    .WithReference(api)
+    .WaitFor(api)
+    .WithExternalHttpEndpoints();</code></pre>
+        <div class="three-column small">
+          <div class="card"><strong>WithReference</strong><br>Injects connection/discovery configuration.</div>
+          <div class="card"><strong>WaitFor</strong><br>Coordinates startup readiness.</div>
+          <div class="card"><strong>External</strong><br>Marks an endpoint for user access.</div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Names replace hardcoded ports</h2>
+        <pre><code class="language-csharp">client.BaseAddress = new("https+http://api");</code></pre>
+        <ul>
+          <li><code>api</code> matches the AppHost resource name.</li>
+          <li><code>https+http</code> prefers HTTPS, then falls back to HTTP.</li>
+          <li>Aspire injects the actual endpoints at runtime.</li>
+          <li>Discover ports from the dashboard or <code>aspire describe</code>.</li>
+        </ul>
+        <p class="takeaway">Never teach a dynamic system with copied localhost ports.</p>
+      </section>
+
+      <section class="lab" data-lab="2">
+        <h2>2 · Discovery + dashboard <span class="clock">25 min</span></h2>
+        <div class="lab-grid tiny">
+          <div>
+            <div class="lab-box"><h3>Objective</h3><p>Prove Web reaches API by resource name and trace one request.</p></div>
+            <div class="lab-box"><h3>Do this</h3><p>Open Web; inspect injected <code>services__api__...</code>; find a Web→API trace and correlated logs.</p></div>
+            <div class="lab-box success"><h3>Success criteria</h3><p>Books load; endpoint configuration is visible; a trace includes Web + API; CLI reports healthy resources.</p></div>
+          </div>
+          <div>
+            <div class="lab-box"><h3>Commands</h3><pre><code class="language-bash"># From repo root, while Lab 1 runs:
+aspire describe --apphost Exercise/workshop/Lesson-01/code/Bookstore.AppHost/Bookstore.AppHost.csproj
+
+aspire logs api --tail 20 --apphost Exercise/workshop/Lesson-01/code/Bookstore.AppHost/Bookstore.AppHost.csproj</code></pre></div>
+            <div class="lab-box follow"><h3>Follow here:</h3><p><a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Exercise/workshop/Lesson-01/README.md#part-c-configure-service-discovery">Lesson 1 Part C</a> + <a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Exercise/workshop/Lesson-01/README.md#explore-the-dashboard">Explore the Dashboard</a></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h1>Break</h1>
+        <p class="subtitle"><span class="clock">10 minutes · return at 01:30</span></p>
+        <p>Stop Lesson 1 with <code>Ctrl+C</code>. Keep Docker running.</p>
+      </section>
+
+      <section>
+        <h2>Integrations: the same model grows</h2>
+        <div class="flow">
+          <div class="flow-box">Redis<br><span class="small">cache</span></div>
+          <div class="flow-box">Cosmos<br><span class="small">data</span></div>
+          <div class="flow-box">Azurite<br><span class="small">queue</span></div>
+          <div class="arrow">→</div>
+          <div class="flow-box">API<br><span class="small">clients</span></div>
+        </div>
+        <ul>
+          <li>AppHost adds infrastructure resources.</li>
+          <li>References inject connection information.</li>
+          <li>Client integrations register typed services and telemetry.</li>
+          <li><code>WaitFor</code> encodes readiness instead of sleeps.</li>
+        </ul>
+      </section>
+
+      <section class="lab" data-lab="3">
+        <h2>3 · Integrations + seed <span class="clock">35 min</span></h2>
+        <div class="lab-grid tiny">
+          <div>
+            <div class="lab-box"><h3>Objective</h3><p>Run Redis, Cosmos, storage, and services as one healthy model; seed and verify books.</p></div>
+            <div class="lab-box"><h3>Do this</h3><p>Start Lesson 2; inspect resources/references; run <strong>Seed data</strong>; verify output and a data/cache trace.</p></div>
+            <div class="lab-box success"><h3>Success criteria</h3><p>All resources healthy; seed succeeds; books appear; repeated seed is not hidden by stale cache.</p></div>
+          </div>
+          <div>
+            <div class="lab-box"><h3>Commands</h3><pre><code class="language-bash">cd Exercise/workshop/Lesson-02/code
+dotnet restore Bookstore.sln
+npm --prefix Bookstore.Admin ci --registry=https://packagefeedproxy.microsoft.io/npm/
+aspire run --apphost Bookstore.AppHost/Bookstore.AppHost.csproj
+
+# Second terminal, repo root:
+aspire resource api seed-db --show-response --apphost Exercise/workshop/Lesson-02/code/Bookstore.AppHost/Bookstore.AppHost.csproj</code></pre></div>
+            <div class="lab-box follow"><h3>Follow here:</h3><p><a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Exercise/workshop/Lesson-02/README.md#step-1-add-redis-for-caching">Lesson 2 Step 1</a> through <a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Exercise/workshop/Lesson-02/README.md#step-4-add-commands">Step 4</a></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>First-run friction is part of the model</h2>
+        <div class="two-column small">
+          <div class="card warning">
+            <h3>Cosmos cold start</h3>
+            <p>The emulator can need 1–3 minutes. If API fails early, let Cosmos warm, stop, and rerun.</p>
+          </div>
+          <div class="card">
+            <h3>Seed + cache</h3>
+            <p>Mutating seed data must evict the <code>/books</code> output cache so validation sees fresh state.</p>
+          </div>
+        </div>
+        <p class="takeaway">Health and dependency edges turn “wait and hope” into observable state.</p>
+      </section>
+
+      <section>
+        <h2>AI skills are workflow guidance</h2>
+        <div class="two-column">
+          <div>
+            <h3>Skills teach the agent</h3>
+            <ul>
+              <li>Which AppHost to select</li>
+              <li>How to start and wait</li>
+              <li>Where to read telemetry</li>
+              <li>How to publish safely</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Skills do not</h3>
+            <ul>
+              <li>Run by themselves</li>
+              <li>Grant extra access</li>
+              <li>Replace code review</li>
+              <li>Make secrets safe to paste</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Six first-party workflows</h2>
+        <div class="three-column small">
+          <div class="card"><strong>aspire</strong><br>router + guardrails</div>
+          <div class="card"><strong>aspire-init</strong><br>new/existing bootstrap</div>
+          <div class="card"><strong>aspireify</strong><br>wire the resource graph</div>
+          <div class="card"><strong>orchestration</strong><br>start/stop/wait</div>
+          <div class="card"><strong>monitoring</strong><br>logs/traces/state</div>
+          <div class="card"><strong>deployment</strong><br>publish/deploy/destroy</div>
+        </div>
+        <p class="takeaway">Install them with the CLI, not a copied mega-prompt.</p>
+      </section>
+
+      <section class="lab" data-lab="4">
+        <h2>4 · AI agents + Aspire skills <span class="clock">30 min</span></h2>
+        <div class="lab-grid tiny">
+          <div>
+            <div class="lab-box"><h3>Objective</h3><p>Install project-local guidance and verify an agent uses Aspire-safe lifecycle and diagnostics.</p></div>
+            <div class="lab-box"><h3>Do this</h3><p>Run <code>aspire agent init</code>; ask the agent to start, wait, describe, read logs, and stop Lesson 1.</p></div>
+            <div class="lab-box success"><h3>Success criteria</h3><p>Skills installed; agent uses background start, explicit AppHost, isolated mode, wait, structured state, no guessed ports.</p></div>
+          </div>
+          <div>
+            <div class="lab-box"><h3>Commands</h3><pre><code class="language-bash">aspire agent init
+
+# Deterministic equivalent:
+aspire agent init --non-interactive --skill-locations standard --skills aspire,aspire-init,aspire-orchestration,aspire-monitoring,aspire-deployment,aspireify</code></pre></div>
+            <div class="lab-box follow"><h3>Follow here:</h3><p><a href="https://github.com/tamirdresher/aspire-workshop/blob/main/docs/ai-agents-and-aspire-skills.md#install-project-local-aspire-guidance">Install project-local guidance</a> + <a href="https://github.com/tamirdresher/aspire-workshop/blob/main/docs/ai-agents-and-aspire-skills.md#agent-safe-runtime-workflow">Agent-safe runtime workflow</a></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Human loop vs agent loop</h2>
+        <div class="two-column">
+          <div class="card">
+            <h3>Human</h3>
+            <pre><code class="language-bash">aspire run --apphost &lt;path&gt;
+# Ctrl+C</code></pre>
+            <p class="small">Foreground output and dashboard.</p>
+          </div>
+          <div class="card">
+            <h3>Agent</h3>
+            <pre><code class="language-bash">aspire start --apphost &lt;path&gt; --isolated
+aspire wait api --apphost &lt;path&gt;
+aspire describe --format Json
+aspire stop --apphost &lt;path&gt;</code></pre>
+            <p class="small">Background, explicit, structured, bounded.</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>One model, three deployment verbs</h2>
+        <div class="three-column small">
+          <div class="card"><h3>publish</h3><p>Build model and write target artifacts. Does not install them.</p></div>
+          <div class="card warning"><h3>deploy</h3><p>Build, push, provision, and install/update. Has side effects.</p></div>
+          <div class="card warning"><h3>destroy</h3><p>Remove tracked target resources. Requires deliberate approval.</p></div>
+        </div>
+        <p class="takeaway"><code>--list-steps</code> reveals the target pipeline before execution.</p>
+      </section>
+
+      <section class="lab" data-lab="5">
+        <h2>5 · Publish walkthrough <span class="clock">10 min</span></h2>
+        <div class="lab-grid tiny">
+          <div>
+            <div class="lab-box"><h3>Objective</h3><p>Distinguish publish/deploy/destroy and inspect generated Compose artifacts.</p></div>
+            <div class="lab-box"><h3>Do this</h3><p>List pipeline steps; publish locally; open <code>docker-compose.yaml</code>. Do not deploy/destroy.</p></div>
+            <div class="lab-box success"><h3>Success criteria</h3><p>You can explain all three verbs and the generated Compose file exists.</p></div>
+          </div>
+          <div>
+            <div class="lab-box"><h3>Commands</h3><pre><code class="language-bash">cd Examples/AspirePublish
+aspire publish --list-steps -- --target compose
+aspire deploy --list-steps -- --target compose
+aspire destroy --list-steps --yes --non-interactive -- --target compose
+aspire publish --output-path ./aspire-output/compose --environment Production --non-interactive -- --target compose</code></pre></div>
+            <div class="lab-box follow"><h3>Follow here:</h3><p><a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Examples/AspirePublish/README.md#what-the-commands-do">What the commands do</a> + <a href="https://github.com/tamirdresher/aspire-workshop/blob/main/Examples/AspirePublish/README.md#docker-compose-target">Docker Compose target</a></p></div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Troubleshooting: shortest path to evidence</h2>
+        <div class="two-column small">
+          <div>
+            <pre><code class="language-bash">aspire doctor
+aspire ps
+aspire describe --format Json
+aspire logs api --tail 100
+aspire otel traces api --has-error</code></pre>
+          </div>
+          <div>
+            <ul>
+              <li><strong>npm:</strong> pass the required proxy with <code>--registry</code></li>
+              <li><strong>unknown URL:</strong> read startup output or describe</li>
+              <li><strong>Cosmos cold:</strong> wait, stop, restart</li>
+              <li><strong>worktree collision:</strong> use <code>--isolated</code></li>
+              <li><strong>many AppHosts:</strong> always pass <code>--apphost</code></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>You now have the complete loop</h2>
+        <div class="flow">
+          <div class="flow-box">Model</div><div class="arrow">→</div>
+          <div class="flow-box">Run</div><div class="arrow">→</div>
+          <div class="flow-box">Observe</div><div class="arrow">→</div>
+          <div class="flow-box">Agent</div><div class="arrow">→</div>
+          <div class="flow-box">Publish</div>
+        </div>
+        <ul>
+          <li>Continue with the full <a href="https://github.com/tamirdresher/aspire-workshop">workshop repository</a>.</li>
+          <li>Use <a href="https://aspire.dev">aspire.dev</a> for current APIs and deployment targets.</li>
+          <li>Review generated code, telemetry access, deployment plans, and secrets.</li>
+        </ul>
+        <p class="takeaway">Start from the application model. Let runtime evidence drive the next action.</p>
+      </section>
+    </div>
+  </div>
+
+  <script src="../node_modules/reveal.js/dist/reveal.js"></script>
+  <script src="../node_modules/reveal.js/plugin/highlight/highlight.js"></script>
+  <script src="../node_modules/reveal.js/plugin/notes/notes.js"></script>
+  <script src="./assets/workshop.js"></script>
+</body>
+</html>
