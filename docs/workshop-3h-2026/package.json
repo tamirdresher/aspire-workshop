@@ -1,0 +1,13 @@
+{
+  "name": "aspire-workshop-3h-2026",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "http-server ../.. -c-1 -o /docs/workshop-3h-2026/reveal/",
+    "check": "node reveal/assets/validate-workshop.mjs"
+  },
+  "devDependencies": {
+    "http-server": "14.1.1",
+    "reveal.js": "5.2.1"
+  }
+}
