@@ -29,12 +29,32 @@ const deck = readFileSync(resolve(root, "reveal/index.html"), "utf8");
 for (let lab = 1; lab <= 5; lab += 1) {
   const marker = `data-lab="${lab}"`;
   if (!deck.includes(marker)) throw new Error(`Deck is missing Lab ${lab}`);
+  const pairing = new RegExp(
+    `<section[^>]*data-concept-for="${lab}"[\\s\\S]*?<\\/section>\\s*<section[^>]*data-lab="${lab}"`,
+    "m"
+  );
+  if (!pairing.test(deck)) {
+    throw new Error(`Lab ${lab} is not immediately preceded by its concept slide`);
+  }
 }
 
 const requiredLabLabels = ["Objective", "Do this", "Commands", "Success criteria", "Follow here:"];
 for (const label of requiredLabLabels) {
   const count = deck.split(label).length - 1;
   if (count < 5) throw new Error(`Expected "${label}" on all five lab slides; found ${count}`);
+}
+
+const requiredConceptLabels = [
+  "Concepts you must understand first",
+  "Why this concept matters",
+  "Core building blocks",
+  "Common mistakes",
+  "What success looks like",
+  "Instructor explanation"
+];
+for (const label of requiredConceptLabels) {
+  const count = deck.split(label).length - 1;
+  if (count < 5) throw new Error(`Expected "${label}" on all five concept slides; found ${count}`);
 }
 
 function githubSlug(value) {

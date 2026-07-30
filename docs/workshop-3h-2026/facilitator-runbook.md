@@ -19,25 +19,25 @@ This runbook is fixed at **180 minutes**. Labs consume **130 minutes (72%)**. Th
 | 00:00–00:03 | 3 | Welcome; frame the outcome as “one model, one dashboard, deployable artifacts.” | Repo open. |
 | 00:03–00:06 | 3 | Show the exact agenda and 72% hands-on ratio. | Understand stop times. |
 | 00:06–00:10 | 4 | Run the short preflight commands. Pair students immediately when blocked. | Aspire doctor and Docker usable. |
-| 00:10–00:15 | 5 | Explain AppHost, resources, references, and lifecycle with the graph slide. | Can name resource vs reference. |
-| 00:15–00:20 | 5 | Explain Service Defaults and dashboard telemetry. No live coding. | Ready for Lab 1. |
+| 00:10–00:15 | 5 | Introduce the application model: AppHost, resources, references, endpoints, lifecycle, and health. | Can distinguish lifecycle state from health. |
+| 00:15–00:20 | 5 | Use the Lab 1 **Concepts you must understand first** slide and its 4-minute instructor callout: contrast AppHost orchestration with Service Defaults. | Ready to locate both responsibilities in code. |
 | 00:20–00:22 | 2 | Read the Lab 1 launch slide: objective, commands, success criteria, link. | Commands copied. |
 | 00:22–00:45 | 23 | Students restore/build, inspect Service Defaults/AppHost, and run. Circulate. | Dashboard has four app resources. |
 | 00:45–00:50 | 5 | Debrief: ask one student to explain “Service Defaults vs AppHost.” Use the solution snapshot for anyone blocked. | Lab 1 success criteria met. |
-| 00:50–00:55 | 5 | Explain `WithReference`, named endpoints, `WaitFor`, and dynamic ports. | Ready for discovery. |
+| 00:50–00:55 | 5 | Use the Lab 2 concept slide and 4-minute callout: follow `WithReference` into injected config and teach graph/health → trace → logs debugging. | Ready to prove discovery and signals. |
 | 00:55–00:57 | 2 | Read the Lab 2 launch slide and point to the exact Lesson 1 section. | Dashboard open. |
 | 00:57–01:15 | 18 | Students inspect injected config, open Web, find a Web→API trace, and run CLI diagnostics. | Trace crosses Web and API. |
 | 01:15–01:20 | 5 | Debrief with “show me where the actual API endpoint came from.” | Lab 2 success criteria met. |
 | 01:20–01:30 | 10 | **Break.** Ask students to stop Lesson 1 and start Docker if needed. | Lesson 1 stopped. |
-| 01:30–01:35 | 5 | Explain integrations as resources + references + client packages; preview Redis/Cosmos/queue. | Ready for Lesson 2 snapshot. |
+| 01:30–01:35 | 5 | Use the Lab 3 concept slide and 4-minute callout: compare Redis cache, Cosmos persistence, and queue decoupling; trace hosting→reference→client. | Ready to justify and inspect each integration. |
 | 01:35–01:37 | 2 | Read Lab 3 launch slide; warn about Cosmos emulator cold start. | Commands copied. |
 | 01:37–02:04 | 27 | Students run Lesson 2, inspect the model, seed data, and inspect a trace. Use warm-up time to review code. | Seeded books visible. |
 | 02:04–02:10 | 6 | Debrief cache invalidation after seed and why health-aware `WaitFor` matters. | Lab 3 success criteria met. |
-| 02:10–02:15 | 5 | Explain skills as workflow guidance, not magic or data access. Contrast human `run` with agent `start`/`wait`. | Ready for agent lab. |
+| 02:10–02:15 | 5 | Use the Lab 4 concept slide and 4-minute callout: teach router→subskill dispatch and safe `start`→`wait`→`describe`→`stop`. | Ready to audit the agent workflow. |
 | 02:15–02:17 | 2 | Read Lab 4 launch slide; emphasize explicit `aspire agent init`. | Correct skill location selected. |
 | 02:17–02:40 | 23 | Students initialize skills and run the prompt. Check that agents use `--apphost`, `--isolated`, `wait`, and structured output. | Agent reports resource state. |
 | 02:40–02:45 | 5 | Debrief the six skills and evidence-first diagnostics. Stop the AppHost. | Lab 4 success criteria met. |
-| 02:45–02:50 | 5 | Explain publish vs deploy vs destroy and target-side effects. | No cloud credentials needed. |
+| 02:45–02:50 | 5 | Use the Lab 5 concept slide and 3-minute callout: separate artifact generation from target execution; preview steps and side effects. | Ready to publish without deploying. |
 | 02:50–02:52 | 2 | Read Lab 5 launch slide; explicitly prohibit live deploy/destroy. | In sample directory. |
 | 02:52–02:57 | 5 | Students list pipeline steps and publish Compose artifacts. | Compose YAML generated. |
 | 02:57–02:59 | 2 | Rapid troubleshooting: dynamic ports, doctor, proxy, Cosmos warm-up, explicit AppHost. | Recovery map understood. |
