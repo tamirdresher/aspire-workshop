@@ -201,6 +201,84 @@
   padding: 0.35em 0.45em;
 }
 
+.section-kicker {
+  margin-bottom: 0.15em;
+  color: var(--green);
+  font-size: 0.55em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.architecture {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.45em;
+  align-items: stretch;
+  margin: 0.55em 0;
+}
+
+.architecture .node {
+  position: relative;
+  padding: 0.55em;
+  text-align: center;
+  background: var(--panel-strong);
+  border: 2px solid var(--blue);
+  border-radius: 8px;
+}
+
+.architecture .node:not(:last-child)::after {
+  position: absolute;
+  top: 42%;
+  right: -0.48em;
+  z-index: 2;
+  color: var(--blue);
+  content: "→";
+}
+
+.worked-example,
+.verify-panel {
+  padding: 0.55em 0.7em;
+  background: var(--panel);
+  border-radius: 8px;
+}
+
+.worked-example {
+  border-left: 4px solid var(--blue);
+}
+
+.verify-panel {
+  border-left: 4px solid var(--green);
+}
+
+.worked-example h3,
+.verify-panel h3 {
+  margin: 0 0 0.25em;
+  color: var(--blue-light);
+}
+
+.sequence {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35em;
+}
+
+.sequence > div {
+  padding: 0.45em 0.35em;
+  text-align: center;
+  background: var(--panel-strong);
+  border-top: 3px solid var(--blue);
+  border-radius: 6px;
+}
+
+.lab-transition {
+  margin: 0.4em 0 0;
+  padding: 0.35em 0.6em;
+  background: rgb(63 185 80 / 10%);
+  border-left: 6px solid var(--green);
+  border-radius: 7px;
+}
+
 .lab h2::before {
   content: "LAB  ";
   color: var(--green);
@@ -273,6 +351,8 @@
   .two-column,
   .three-column,
   .concept-grid,
+  .architecture,
+  .sequence,
   .lab-grid {
     grid-template-columns: 1fr;
   }

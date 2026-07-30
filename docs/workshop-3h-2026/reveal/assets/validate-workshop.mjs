@@ -57,6 +57,32 @@ for (const label of requiredConceptLabels) {
   if (count < 5) throw new Error(`Expected "${label}" on all five concept slides; found ${count}`);
 }
 
+const requiredTeachingTopics = [
+  "mental-model",
+  "apphost-patterns",
+  "service-defaults",
+  "service-discovery",
+  "observability",
+  "integration-model",
+  "integration-use-path",
+  "integration-observability",
+  "agent-skills",
+  "agent-worked-example",
+  "deployment-lifecycle",
+  "deployment-target",
+  "artifact-anatomy"
+];
+for (const topic of requiredTeachingTopics) {
+  if (!deck.includes(`data-topic="${topic}"`)) {
+    throw new Error(`Deck is missing substantive teaching topic "${topic}"`);
+  }
+}
+
+const workedExamples = deck.split('class="worked-example"').length - 1;
+const verificationPanels = deck.split('class="verify-panel').length - 1;
+if (workedExamples < 12) throw new Error(`Expected at least 12 worked examples; found ${workedExamples}`);
+if (verificationPanels < 8) throw new Error(`Expected at least 8 verification panels; found ${verificationPanels}`);
+
 function githubSlug(value) {
   return value
     .trim()

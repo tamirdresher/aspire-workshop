@@ -54,13 +54,13 @@
       <section>
         <h2>Learning map: concept → action → outcome</h2>
         <table class="learning-map">
-          <thead><tr><th>Concept first</th><th>Immediate lab</th><th>Expected learning outcome</th></tr></thead>
+          <thead><tr><th>Topic</th><th>Key instructor insight</th><th>Lab action that reinforces it</th></tr></thead>
           <tbody>
-            <tr><td>Application model + Service Defaults</td><td>Lab 1</td><td>Read the resource graph and explain shared defaults vs orchestration.</td></tr>
-            <tr><td>Discovery + observability signals</td><td>Lab 2</td><td>Follow injected configuration and debug a Web→API request.</td></tr>
-            <tr><td>Cache, database, and queue integrations</td><td>Lab 3</td><td>Choose the right integration and verify health/data flow.</td></tr>
-            <tr><td>Router skill + safe agent lifecycle</td><td>Lab 4</td><td>Guide an agent with start→wait→describe→stop.</td></tr>
-            <tr><td>Publish artifacts vs deployment execution</td><td>Lab 5</td><td>Inspect a pipeline without causing deployment side effects.</td></tr>
+            <tr><td>Mental model + Service Defaults</td><td>Code declares a runtime graph; shared defaults instrument every service.</td><td><strong>Lab 1:</strong> read C#/TypeScript topology and prove health/telemetry.</td></tr>
+            <tr><td>Discovery + dashboard</td><td>A reference becomes injected endpoint config; signals answer different debugging questions.</td><td><strong>Lab 2:</strong> follow Web→API config and correlate graph, trace, logs.</td></tr>
+            <tr><td>Redis + Cosmos + Queue</td><td>Hosting and client integrations connect topology to a specific runtime use path.</td><td><strong>Lab 3:</strong> seed, cache, persist, enqueue, process, verify.</td></tr>
+            <tr><td>Agents + skills</td><td>The router selects guarded subskills; agents act only after readiness/evidence.</td><td><strong>Lab 4:</strong> audit start→wait→describe→logs→stop.</td></tr>
+            <tr><td>Publish + deploy</td><td>Publishing creates reviewable artifacts; deployment executes side effects.</td><td><strong>Lab 5:</strong> preview steps and inspect Compose output only.</td></tr>
           </tbody>
         </table>
         <p class="takeaway">Every explanation ends with something you will prove in the next lab.</p>
@@ -122,6 +122,87 @@ docker version</code></pre>
         <div class="takeaway">Aspire orchestrates your development environment. It is not a replacement for ASP.NET Core, containers, or your cloud platform.</div>
       </section>
 
+      <section data-topic="mental-model">
+        <p class="section-kicker">Mental model · worked architecture</p>
+        <h2>Code becomes a live resource graph</h2>
+        <div class="architecture small">
+          <div class="node"><strong>AppHost</strong><br>declares desired topology</div>
+          <div class="node"><strong>Resources</strong><br>api · web · worker · admin</div>
+          <div class="node"><strong>Relationships</strong><br>references · endpoints · waits</div>
+          <div class="node"><strong>Runtime state</strong><br>Starting → Running<br>Health: Healthy/Unhealthy</div>
+        </div>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Concrete Bookstore example</h3>
+            <pre><code class="language-csharp">var api = builder.AddProject&lt;Projects.Bookstore_API&gt;("api");
+
+builder.AddProject&lt;Projects.Bookstore_Web&gt;("web")
+    .WithReference(api)
+    .WithExternalHttpEndpoints();</code></pre>
+            <p><code>web → api</code> is a configuration edge. “External” marks Web for user access; it does not make API public.</p>
+          </div>
+          <div class="verify-panel">
+            <h3>How to verify</h3>
+            <ul><li>Resources page: nodes, state, health, endpoints</li><li><code>aspire describe</code>: same graph as structured data</li><li>Web environment: injected <code>services__api__...</code></li></ul>
+          </div>
+        </div>
+      </section>
+
+      <section data-topic="apphost-patterns">
+        <p class="section-kicker">AppHost orchestration · same graph, two languages</p>
+        <h2>C# and TypeScript express the same intent</h2>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>C# AppHost</h3>
+            <pre><code class="language-csharp">var api = builder.AddProject&lt;Projects.Bookstore_API&gt;("api");
+builder.AddProject&lt;Projects.Bookstore_Web&gt;("web")
+    .WithReference(api)
+    .WaitFor(api)
+    .WithExternalHttpEndpoints();
+builder.Build().Run();</code></pre>
+          </div>
+          <div class="worked-example">
+            <h3>TypeScript AppHost</h3>
+            <pre><code class="language-typescript">const api = builder.addProject('api', '../Bookstore.API/Bookstore.API.csproj');
+await builder.addProject('web', '../Bookstore.Web/Bookstore.Web/Bookstore.Web.csproj')
+  .withReference(api)
+  .waitFor(api)
+  .withExternalHttpEndpoints();
+await builder.build().run();</code></pre>
+          </div>
+        </div>
+        <p class="takeaway small"><strong>Pattern:</strong> create resource → add relationship → add lifecycle constraint → expose only the edge that needs user traffic. TypeScript's generated <code>.aspire/modules</code> API is restored, not hand-edited.</p>
+      </section>
+
+      <section data-topic="service-defaults">
+        <p class="section-kicker">Service Defaults · internals</p>
+        <h2>One extension establishes four service guarantees</h2>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Real workshop code</h3>
+            <pre><code class="language-csharp">public static TBuilder AddServiceDefaults&lt;TBuilder&gt;(this TBuilder builder)
+{
+    builder.ConfigureOpenTelemetry();
+    builder.AddDefaultHealthChecks();
+    builder.Services.AddServiceDiscovery();
+    builder.Services.ConfigureHttpClientDefaults(http =>
+    {
+        http.AddStandardResilienceHandler();
+        http.AddServiceDiscovery();
+    });
+    return builder;
+}</code></pre>
+          </div>
+          <div>
+            <div class="card"><strong>Observe</strong> — logs, HTTP/server/runtime metrics, distributed traces, OTLP export</div>
+            <div class="card"><strong>Survive</strong> — standard HTTP retry/timeout/circuit-breaker policies</div>
+            <div class="card"><strong>Discover</strong> — named endpoints resolve through HTTP clients</div>
+            <div class="card"><strong>Report health</strong> — <code>/alive</code> answers “process responsive?”; <code>/health</code> answers “ready?”</div>
+          </div>
+        </div>
+        <div class="verify-panel tiny"><h3>Debugging angle</h3><p>If no trace appears, confirm the service calls <code>AddServiceDefaults()</code>, the app calls <code>MapDefaultEndpoints()</code>, and AppHost injected <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>. Health requests are intentionally filtered from traces to reduce noise.</p></div>
+      </section>
+
       <section class="concept" data-concept-for="1">
         <h2>Concepts you must understand first <span class="muted">· before Lab 1</span></h2>
         <div class="concept-grid tiny">
@@ -130,7 +211,8 @@ docker version</code></pre>
           <div class="concept-card"><h3>Common mistakes</h3><ul><li>Treating AppHost as business code</li><li>Assuming Service Defaults starts resources</li><li>Confusing a project name with its resource name</li><li>Reading “Running” as “Healthy”</li></ul></div>
           <div class="concept-card"><h3>What success looks like</h3><p>You can read <code>Program.cs</code> as a graph, identify endpoints/references, distinguish lifecycle from health, and explain why shared defaults live outside each service.</p></div>
         </div>
-        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> Draw AppHost → resources → references/endpoints. Contrast “process started” with “ready.” Then open Service Defaults and connect each extension to what students will find in Lab 1.</div>
+        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> Draw AppHost → resources → references/endpoints. Contrast “process started” with “ready.” Connect each Service Defaults extension to the dashboard signal it enables.</div>
+        <p class="lab-transition tiny"><strong>Transition to Lab 1:</strong> students will locate this exact graph in C#/TypeScript, find the four defaults in code, and prove running + healthy are distinct.</p>
       </section>
 
       <section class="lab" data-lab="1">
@@ -167,6 +249,56 @@ builder.AddProject&lt;Projects.Bookstore_Web&gt;("web")
         </div>
       </section>
 
+      <section data-topic="service-discovery">
+        <p class="section-kicker">Service discovery · worked flow</p>
+        <h2>A reference becomes endpoint configuration</h2>
+        <div class="sequence tiny">
+          <div><strong>1 · Name</strong><br><code>"api"</code></div>
+          <div><strong>2 · Reference</strong><br><code>WithReference(api)</code></div>
+          <div><strong>3 · Inject</strong><br><code>services__api__https__0</code></div>
+          <div><strong>4 · Resolve</strong><br><code>https+http://api</code></div>
+          <div><strong>5 · Call</strong><br>actual dynamic endpoint</div>
+        </div>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Consumer code</h3>
+            <pre><code class="language-csharp">builder.Services.AddHttpClient&lt;BookstoreClient&gt;(client =>
+{
+    client.BaseAddress = new("https+http://api");
+});</code></pre>
+            <p><code>https+http</code> tries schemes left-to-right. The logical name survives local port changes and deployment.</p>
+          </div>
+          <div class="verify-panel">
+            <h3>Verify the contract</h3>
+            <ul><li>Reveal Web's injected configuration in Resources</li><li>Compare it with <code>aspire describe api</code></li><li>Open Web; change no port in consumer code</li></ul>
+          </div>
+        </div>
+      </section>
+
+      <section data-topic="observability">
+        <p class="section-kicker">Dashboard observability · debugging method</p>
+        <h2>Start broad, then correlate</h2>
+        <div class="architecture small">
+          <div class="node"><strong>Resource graph</strong><br>What is down or unhealthy?</div>
+          <div class="node"><strong>Trace</strong><br>Which hop is slow or failed?</div>
+          <div class="node"><strong>Structured logs</strong><br>What happened in that trace?</div>
+          <div class="node"><strong>Console logs</strong><br>Did the process fail to start?</div>
+        </div>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Worked failure: books page is empty</h3>
+            <ol><li>Graph: Web and API healthy?</li><li>Trace: did <code>GET /books</code> reach API?</li><li>Logs by trace ID: status code, exception, dependency?</li><li>Console only if startup/runtime output is needed.</li></ol>
+          </div>
+          <div class="verify-panel">
+            <h3>CLI mirrors the dashboard</h3>
+            <pre><code class="language-bash">aspire describe --format Json
+aspire otel traces api --has-error
+aspire otel logs api --search "@http.status_code:500"
+aspire logs api --tail 100</code></pre>
+          </div>
+        </div>
+      </section>
+
       <section class="concept" data-concept-for="2">
         <h2>Concepts you must understand first <span class="muted">· before Lab 2</span></h2>
         <div class="concept-grid tiny">
@@ -175,7 +307,8 @@ builder.AddProject&lt;Projects.Bookstore_Web&gt;("web")
           <div class="concept-card"><h3>Common mistakes</h3><ul><li>Hardcoding localhost ports</li><li>Expecting a reference to wait for readiness</li><li>Starting with random logs instead of resource health</li><li>Reading one service's log without the trace</li></ul></div>
           <div class="concept-card"><h3>What success looks like</h3><p>You can locate injected endpoint config, load Web without knowing API's port, and debug in order: graph/health → trace → correlated logs.</p></div>
         </div>
-        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> Follow <code>WithReference</code> from AppHost to configuration to <code>https+http://api</code>. Generate one request and show how graph, trace, and logs answer different questions students will prove in Lab 2.</div>
+        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> Follow <code>WithReference</code> from AppHost to configuration to <code>https+http://api</code>. Generate one request and show how graph, trace, and logs answer different questions.</div>
+        <p class="lab-transition tiny"><strong>Transition to Lab 2:</strong> students will prove the injected endpoint, then diagnose one Web→API request using the graph→trace→logs sequence.</p>
       </section>
 
       <section class="lab" data-lab="2">
@@ -202,6 +335,85 @@ aspire logs api --tail 20 --apphost Exercise/workshop/Lesson-01/code/Bookstore.A
         <p>Stop Lesson 1 with <code>Ctrl+C</code>. Keep Docker running.</p>
       </section>
 
+      <section data-topic="integration-model">
+        <p class="section-kicker">Integrations · architecture pattern</p>
+        <h2>Every integration has a hosting half and a client half</h2>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>AppHost: create + connect</h3>
+            <pre><code class="language-csharp">var cache = builder.AddRedis("cache");
+var cosmos = builder.AddAzureCosmosDB("cosmosdb")
+    .RunAsEmulator()
+    .AddCosmosDatabase("cosmos");
+var queue = builder.AddAzureStorage("storage")
+    .RunAsEmulator()
+    .AddQueues("queue");
+
+api.WithReference(cache).WithReference(cosmos).WithReference(queue);</code></pre>
+          </div>
+          <div class="worked-example">
+            <h3>API: consume by the same names</h3>
+            <pre><code class="language-csharp">builder.AddRedisOutputCache("cache");
+builder.AddCosmosDbContext&lt;BookstoreDbContext&gt;("cosmos");
+builder.AddAzureQueueServiceClient("queue");</code></pre>
+            <p>Matching resource names are the contract. Client integrations add SDK wiring, health checks, logging, and telemetry—not just a raw connection string.</p>
+          </div>
+        </div>
+      </section>
+
+      <section data-topic="integration-use-path">
+        <p class="section-kicker">Integrations · concrete Bookstore use path</p>
+        <h2>Create a book: persistence and async processing</h2>
+        <div class="sequence tiny">
+          <div><strong>Admin</strong><br><code>POST /books</code></div>
+          <div><strong>API + Cosmos</strong><br>persist with “Pending…”</div>
+          <div><strong>API + Queue</strong><br>send <code>BookCreatedMessage</code></div>
+          <div><strong>Worker</strong><br>receive + generate description</div>
+          <div><strong>API + Cosmos</strong><br><code>PUT /description</code></div>
+        </div>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Producer</h3>
+            <pre><code class="language-csharp">await repository.CreateBookAsync(book);
+await queueClient.SendMessageAsync(
+    JsonSerializer.Serialize(new BookCreatedMessage {
+        BookId = book.Id, Title = book.Title, Author = book.Author
+    }));</code></pre>
+          </div>
+          <div class="worked-example">
+            <h3>Consumer</h3>
+            <pre><code class="language-csharp">var messages = await queueClient.ReceiveMessagesAsync(maxMessages: 10);
+await httpClient.PutAsJsonAsync(
+    $"/books/{message.BookId}/description", description);
+await queueClient.DeleteMessageAsync(id, popReceipt);</code></pre>
+          </div>
+        </div>
+        <p class="takeaway small"><strong>Why queue?</strong> The API returns after durable handoff; the Worker can retry slow description work independently.</p>
+      </section>
+
+      <section data-topic="integration-observability">
+        <p class="section-kicker">Integrations · cache path + verification</p>
+        <h2>Reads are cached; writes must restore truth</h2>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Cache the read</h3>
+            <pre><code class="language-csharp">app.MapGet("/books", async (BookstoreRepository repository) =>
+    Results.Ok(await repository.GetBooksAsync()))
+  .CacheOutput(policy => policy
+      .Expire(TimeSpan.FromMinutes(5))
+      .Tag("books"));</code></pre>
+          </div>
+          <div class="worked-example">
+            <h3>Invalidate after seed</h3>
+            <pre><code class="language-csharp">foreach (var book in initialBooks)
+    await repository.CreateBookAsync(book);
+
+await cacheStore.EvictByTagAsync("books", ct);</code></pre>
+          </div>
+        </div>
+        <div class="verify-panel tiny"><h3>Debug the full path</h3><p>Resources: Redis/Cosmos/storage healthy → run Seed command → Web shows books → trace API dependency spans → Worker console shows queue receive/update → second read reflects invalidation. A healthy container alone does not prove the use path.</p></div>
+      </section>
+
       <section class="concept" data-concept-for="3">
         <h2>Concepts you must understand first <span class="muted">· before Lab 3</span></h2>
         <div class="concept-grid tiny">
@@ -210,7 +422,8 @@ aspire logs api --tail 20 --apphost Exercise/workshop/Lesson-01/code/Bookstore.A
           <div class="concept-card"><h3>Common mistakes</h3><ul><li>Using cache as source of truth</li><li>Doing slow work inside the request instead of queueing</li><li>Adding infrastructure but not the client integration</li><li>Using sleeps instead of health-aware dependencies</li></ul></div>
           <div class="concept-card"><h3>What success looks like</h3><p>You can justify each dependency, trace resource→reference→client, wait for healthy emulators, seed durable data, and invalidate cached reads after mutation.</p></div>
         </div>
-        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> For Redis, Cosmos, and queue, ask “what problem does it solve?” Then trace one integration from AppHost resource through injected connection to client code—the exact path students inspect in Lab 3.</div>
+        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> For Redis, Cosmos, and queue, ask “what problem does it solve?” Trace hosting resource → reference → client integration → one observable operation.</div>
+        <p class="lab-transition tiny"><strong>Transition to Lab 3:</strong> students will run this exact topology, seed Cosmos, prove cache invalidation, and find evidence of the queue-driven Worker path.</p>
       </section>
 
       <section class="lab" data-lab="3">
@@ -273,6 +486,45 @@ aspire resource api seed-db --show-response --apphost Exercise/workshop/Lesson-0
         </div>
       </section>
 
+      <section data-topic="agent-skills">
+        <p class="section-kicker">AI coding agents · routing architecture</p>
+        <h2>One router delegates to bounded workflows</h2>
+        <div class="architecture small">
+          <div class="node"><strong>Request</strong><br>“Investigate API errors”</div>
+          <div class="node"><strong>aspire</strong><br>detect AppHost + apply guardrails</div>
+          <div class="node"><strong>monitoring</strong><br>describe · logs · traces</div>
+          <div class="node"><strong>Evidence</strong><br>explain before editing</div>
+        </div>
+        <div class="three-column tiny">
+          <div class="card"><strong>Bootstrap</strong><br><code>aspire-init</code> chooses new/init; <code>aspireify</code> wires an existing app once.</div>
+          <div class="card"><strong>Runtime</strong><br><code>orchestration</code> owns start/stop/wait/recovery; <code>monitoring</code> owns state and telemetry.</div>
+          <div class="card"><strong>Release</strong><br><code>deployment</code> owns publish/deploy/destroy and target safety.</div>
+        </div>
+        <p class="takeaway small"><code>aspire agent init</code> installs the reviewed project-local contract; a large prompt does not replace it.</p>
+      </section>
+
+      <section data-topic="agent-worked-example">
+        <p class="section-kicker">AI coding agents · worked example</p>
+        <h2>Prompt intent becomes a safe command sequence</h2>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Student prompt</h3>
+            <blockquote>Start Lesson 1 in isolated mode, wait for API health, summarize resource state, and show the last 20 API log lines. Do not guess ports.</blockquote>
+            <h3>Expected router decision</h3>
+            <p><code>aspire</code> → orchestration for lifecycle → monitoring for state/logs.</p>
+          </div>
+          <div class="worked-example">
+            <h3>Observable execution</h3>
+            <pre><code class="language-bash">aspire start --apphost &lt;path&gt; --isolated --non-interactive
+aspire wait api --apphost &lt;path&gt; --non-interactive
+aspire describe --apphost &lt;path&gt; --format Json --non-interactive
+aspire logs api --tail 20 --format Json --non-interactive
+aspire stop --apphost &lt;path&gt; --non-interactive</code></pre>
+          </div>
+        </div>
+        <div class="verify-panel tiny"><h3>Safety check</h3><p>Explicit AppHost, isolated worktree, readiness before interaction, structured evidence, no dashboard token in output, no name-based process killing, clean stop.</p></div>
+      </section>
+
       <section class="concept" data-concept-for="4">
         <h2>Concepts you must understand first <span class="muted">· before Lab 4</span></h2>
         <div class="concept-grid tiny">
@@ -281,7 +533,8 @@ aspire resource api seed-db --show-response --apphost Exercise/workshop/Lesson-0
           <div class="concept-card"><h3>Common mistakes</h3><ul><li>Using <code>run</code> for a background agent</li><li>Polling guessed ports instead of <code>wait</code></li><li>Omitting <code>--apphost</code> in this multi-AppHost repo</li><li>Changing code before reading signals</li></ul></div>
           <div class="concept-card"><h3>What success looks like</h3><p><code>aspire agent init</code> installs reviewed local skills; the router chooses a subskill; the agent reports structured state and exits with no orphaned AppHost.</p></div>
         </div>
-        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> Show router→subskill dispatch, then narrate start→wait→describe→stop. Contrast human foreground <code>run</code> with agent background <code>start</code> before students verify the behavior in Lab 4.</div>
+        <div class="instructor-callout tiny"><strong>Instructor explanation · 4 minutes:</strong> Show router→subskill dispatch, then narrate start→wait→describe→stop. Contrast human foreground <code>run</code> with agent background <code>start</code>.</div>
+        <p class="lab-transition tiny"><strong>Transition to Lab 4:</strong> students will initialize the six skills, issue the worked prompt, and audit the agent against every safety checkpoint.</p>
       </section>
 
       <section class="lab" data-lab="4">
@@ -302,24 +555,61 @@ aspire agent init --non-interactive --skill-locations standard --skills aspire,a
         </div>
       </section>
 
-      <section>
-        <h2>Human loop vs agent loop</h2>
-        <div class="two-column">
-          <div class="card">
-            <h3>Human</h3>
-            <pre><code class="language-bash">aspire run --apphost &lt;path&gt;
-# Ctrl+C</code></pre>
-            <p class="small">Foreground output and dashboard.</p>
+      <section data-topic="deployment-lifecycle">
+        <p class="section-kicker">Publish and deploy · lifecycle model</p>
+        <h2>The same production model, different side effects</h2>
+        <div class="architecture small">
+          <div class="node"><strong>AppHost</strong><br>production resource model</div>
+          <div class="node"><strong>publish</strong><br>generate artifacts</div>
+          <div class="node"><strong>deploy</strong><br>build/push/provision/install</div>
+          <div class="node"><strong>destroy</strong><br>remove tracked resources</div>
+        </div>
+        <div class="two-column tiny">
+          <div class="worked-example"><h3>Review boundary</h3><p><code>aspire publish --list-steps</code> discovers the pipeline; publish output can be scanned, diffed, policy-checked, or handed to GitOps.</p></div>
+          <div class="verify-panel"><h3>Execution boundary</h3><p>Deploy needs target identity/context. Destroy needs matching state and deliberate approval. Keep target, environment, output path, and AppHost arguments consistent.</p></div>
+        </div>
+      </section>
+
+      <section data-topic="deployment-target">
+        <p class="section-kicker">Publish and deploy · concrete AppHost example</p>
+        <h2>The target is selected in application-model code</h2>
+        <div class="two-column tiny">
+          <div class="worked-example">
+            <h3>Real <code>Examples/AspirePublish/AppHost.cs</code></h3>
+            <pre><code class="language-csharp">var target = builder.Configuration["Deployment:Target"] ?? "compose";
+switch (target)
+{
+    case "compose":
+        builder.AddDockerComposeEnvironment("env");
+        break;
+    case "k8s":
+        var registry = builder.AddContainerRegistry("registry", registryHost);
+        builder.AddKubernetesEnvironment("env")
+            .WithContainerRegistry(registry)
+            .WithHelm(h => h.WithNamespace("aspire-publish"));
+        break;
+}</code></pre>
           </div>
-          <div class="card">
-            <h3>Agent</h3>
-            <pre><code class="language-bash">aspire start --apphost &lt;path&gt; --isolated
-aspire wait api --apphost &lt;path&gt;
-aspire describe --format Json
-aspire stop --apphost &lt;path&gt;</code></pre>
-            <p class="small">Background, explicit, structured, bounded.</p>
+          <div>
+            <div class="card"><strong>Compose</strong><br>Local OCI build + generated services/network/environment; no registry required.</div>
+            <div class="card"><strong>Kubernetes</strong><br>Registry + Helm chart + current cluster context; routing/TLS remain platform decisions.</div>
+            <div class="card warning"><strong>Arguments after <code>--</code></strong><br>Flow into AppHost configuration: <code>-- --target compose</code>.</div>
           </div>
         </div>
+      </section>
+
+      <section data-topic="artifact-anatomy">
+        <p class="section-kicker">Publish and deploy · artifact anatomy</p>
+        <h2>What should you inspect before execution?</h2>
+        <div class="three-column tiny">
+          <div class="worked-example"><h3>Workloads</h3><p>Images/build contexts, commands, replicas, health checks, and dependency ordering.</p></div>
+          <div class="worked-example"><h3>Configuration</h3><p>Environment variables, endpoint references, parameters, generated files, and secret references.</p></div>
+          <div class="worked-example"><h3>Networking</h3><p>Internal services, externally exposed ports/routes, DNS names, ingress/Gateway, and TLS ownership.</p></div>
+        </div>
+        <div class="verify-panel tiny"><h3>Worked verification</h3><pre><code class="language-bash">aspire publish --list-steps -- --target compose
+aspire publish --output-path ./aspire-output/compose \
+  --environment Production --non-interactive -- --target compose
+# Inspect docker-compose.yaml and generated environment files; do not deploy.</code></pre></div>
       </section>
 
       <section class="concept" data-concept-for="5">
@@ -330,7 +620,8 @@ aspire stop --apphost &lt;path&gt;</code></pre>
           <div class="concept-card"><h3>Common mistakes</h3><ul><li>Assuming publish installs the app</li><li>Running deploy without reviewing target/context</li><li>Committing generated secrets or deployment state</li><li>Automating destroy without explicit approval</li></ul></div>
           <div class="concept-card"><h3>What success looks like</h3><p>You can preview steps, publish Compose artifacts, inspect workloads/config/networking, and explain exactly when side effects begin—without deploying in class.</p></div>
         </div>
-        <div class="instructor-callout tiny"><strong>Instructor explanation · 3 minutes:</strong> Draw a hard boundary between “write artifacts” and “execute against a target.” Preview pipeline steps, then tell students Lab 5 ends at inspecting generated Compose YAML.</div>
+        <div class="instructor-callout tiny"><strong>Instructor explanation · 3 minutes:</strong> Draw a hard boundary between “write artifacts” and “execute against a target.” Connect the target switch to generated output and side effects.</div>
+        <p class="lab-transition tiny"><strong>Transition to Lab 5:</strong> students will preview all three pipelines, publish Compose output, and explain the generated workloads/config/network without deploying.</p>
       </section>
 
       <section class="lab" data-lab="5">
