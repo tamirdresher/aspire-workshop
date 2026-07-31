@@ -23,7 +23,8 @@ public class PlaywrightIntegrationTests(ITestOutputHelper testOutputHelper) : IA
 
     public async Task InitializeAsync()
     {
-        var cancellationToken = CancellationToken.None;
+        using var startupCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        var cancellationToken = startupCts.Token;
         
         // Create and start the distributed application with all its services
         var appHost = await DistributedApplicationTestingBuilder
@@ -56,16 +57,22 @@ public class PlaywrightIntegrationTests(ITestOutputHelper testOutputHelper) : IA
 
         _app = await appHost.BuildAsync(cancellationToken);
         await _app.StartAsync(cancellationToken);
-        
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("aspire-dashboard",  cancellationToken);
+
+        // Bound the resource health-check waits so a stuck teardown/health-check from a
+        // prior test (or the container runtime) fails fast with a clear timeout exception
+        // instead of hanging the entire test run indefinitely (#4829).
+        using var healthCheckCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        var healthCheckToken = healthCheckCts.Token;
+
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("aspire-dashboard", healthCheckToken);
 
         // Wait for all services to be healthy
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("db", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("cache", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("messaging", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("backend", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("ai-service", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("frontend", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("db", healthCheckToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("cache", healthCheckToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("messaging", healthCheckToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("backend", healthCheckToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("ai-service", healthCheckToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("frontend", healthCheckToken);
 
         // Initialize Playwright
         _playwright = await Playwright.CreateAsync();
