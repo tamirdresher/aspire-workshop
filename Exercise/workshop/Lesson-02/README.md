@@ -128,6 +128,22 @@ await builder.build().run();
 We'll start by adding a Redis cache to our application to store the output of our API endpoints.
 
 1.  **Add Redis to the AppHost**:
+    Add the Redis hosting integration to the AppHost project:
+
+    **Command Line (recommended)**:
+    ```bash
+    aspire add redis --apphost Bookstore.AppHost/Bookstore.AppHost.csproj
+    ```
+
+    On the stable 13.4.6 SDK used by this workshop, `aspire add redis` adds
+    `Aspire.Hosting.Redis` 13.4.6.
+
+    **Visual Studio/VS Code**:
+    - Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
+    - Search for `Aspire.Hosting.Redis`
+    - Install version `13.4.6` to match the AppHost SDK and align with the repository's
+      central package management
+
     Open `Bookstore.AppHost/Program.cs` and add the Redis resource:
 
     ```csharp
@@ -144,6 +160,21 @@ We'll start by adding a Redis cache to our application to store the output of ou
     ```
 
 3.  **Configure the API**:
+    Add the Redis output-caching client package to the API project:
+
+    **Command Line (recommended)**:
+    ```bash
+    dotnet add Bookstore.API/Bookstore.API.csproj package Aspire.StackExchange.Redis.OutputCaching
+    ```
+
+    The repository's central package management (`Directory.Packages.props`) pins
+    `Aspire.StackExchange.Redis.OutputCaching` to `13.4.6` to match the AppHost SDK,
+    so `dotnet add package` does not need an explicit `--version`.
+
+    **Visual Studio/VS Code**:
+    - Right-click on the [`Bookstore.API`](./code/Bookstore.API/Bookstore.API.csproj) project → `Manage NuGet Packages`
+    - Search for `Aspire.StackExchange.Redis.OutputCaching` → Install
+
     In `Bookstore.API/Program.cs`, add the Redis output cache service:
 
     ```csharp
@@ -168,6 +199,22 @@ We'll start by adding a Redis cache to our application to store the output of ou
 Now we will replace the in-memory list of books with a persistent database using Azure Cosmos DB and Entity Framework Core.
 
 1.  **Add Cosmos DB to the AppHost**:
+    Add the Cosmos DB hosting integration to the AppHost project:
+
+    **Command Line (recommended)**:
+    ```bash
+    aspire add azure-cosmosdb --apphost Bookstore.AppHost/Bookstore.AppHost.csproj
+    ```
+
+    On the stable 13.4.6 SDK used by this workshop, `aspire add azure-cosmosdb` adds
+    `Aspire.Hosting.Azure.CosmosDB` 13.4.6.
+
+    **Visual Studio/VS Code**:
+    - Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
+    - Search for `Aspire.Hosting.Azure.CosmosDB`
+    - Install version `13.4.6` to match the AppHost SDK and align with the repository's
+      central package management
+
     In `Bookstore.AppHost/Program.cs`, add the Cosmos DB resource and a database:
 
     ```csharp
@@ -204,6 +251,21 @@ Now we will replace the in-memory list of books with a persistent database using
     *(These files are provided in the `code/Bookstore.API/Data` directory of this lesson)*
 
 4.  **Configure the API**:
+    Add the Cosmos DB Entity Framework Core client package to the API project:
+
+    **Command Line (recommended)**:
+    ```bash
+    dotnet add Bookstore.API/Bookstore.API.csproj package Aspire.Microsoft.EntityFrameworkCore.Cosmos
+    ```
+
+    The repository's central package management pins
+    `Aspire.Microsoft.EntityFrameworkCore.Cosmos` to `13.4.6` to match the AppHost SDK,
+    so `dotnet add package` does not need an explicit `--version`.
+
+    **Visual Studio/VS Code**:
+    - Right-click on the [`Bookstore.API`](./code/Bookstore.API/Bookstore.API.csproj) project → `Manage NuGet Packages`
+    - Search for `Aspire.Microsoft.EntityFrameworkCore.Cosmos` → Install
+
     In `Bookstore.API/Program.cs`, register the DbContext and Repository:
 
     ```csharp
@@ -242,6 +304,22 @@ Now we will replace the in-memory list of books with a persistent database using
 We will add an Azure Storage Queue to handle background processing tasks.
 
 1.  **Add Storage to the AppHost**:
+    Add the Azure Storage hosting integration to the AppHost project:
+
+    **Command Line (recommended)**:
+    ```bash
+    aspire add azure-storage --apphost Bookstore.AppHost/Bookstore.AppHost.csproj
+    ```
+
+    On the stable 13.4.6 SDK used by this workshop, `aspire add azure-storage` adds
+    `Aspire.Hosting.Azure.Storage` 13.4.6.
+
+    **Visual Studio/VS Code**:
+    - Right-click on the [`Bookstore.AppHost`](./code/Bookstore.AppHost/Bookstore.AppHost.csproj) project → `Manage NuGet Packages`
+    - Search for `Aspire.Hosting.Azure.Storage`
+    - Install version `13.4.6` to match the AppHost SDK and align with the repository's
+      central package management
+
     In `Bookstore.AppHost/Program.cs`, add the Azure Storage resource and a queue:
 
     ```csharp
@@ -259,6 +337,29 @@ We will add an Azure Storage Queue to handle background processing tasks.
         // ... other references ...
         .WithReference(queue)
         .WaitFor(queue);
+    ```
+
+3.  **Configure the API and Worker to use the Queue**:
+    Add the Azure Storage Queues client package to both the API and Worker projects:
+
+    **Command Line (recommended)**:
+    ```bash
+    dotnet add Bookstore.API/Bookstore.API.csproj package Aspire.Azure.Storage.Queues
+    dotnet add Bookstore.Worker/Bookstore.Worker.csproj package Aspire.Azure.Storage.Queues
+    ```
+
+    The repository's central package management pins `Aspire.Azure.Storage.Queues`
+    to `13.4.6` to match the AppHost SDK, so `dotnet add package` does not need an
+    explicit `--version`.
+
+    **Visual Studio/VS Code**:
+    - Right-click on the [`Bookstore.API`](./code/Bookstore.API/Bookstore.API.csproj) project → `Manage NuGet Packages` → search for `Aspire.Azure.Storage.Queues` → Install
+    - Repeat for the [`Bookstore.Worker`](./code/Bookstore.Worker/Bookstore.Worker.csproj) project
+
+    In `Bookstore.API/Program.cs` (and `Bookstore.Worker/Program.cs`), register the queue service client:
+
+    ```csharp
+    builder.AddAzureQueueServiceClient("queue");
     ```
 
 ## Step 4: Add Commands
