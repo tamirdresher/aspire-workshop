@@ -56,16 +56,16 @@ public class PlaywrightIntegrationTests(ITestOutputHelper testOutputHelper) : IA
 
         _app = await appHost.BuildAsync(cancellationToken);
         await _app.StartAsync(cancellationToken);
-        
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("aspire-dashboard",  cancellationToken);
+
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("aspire-dashboard", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
 
         // Wait for all services to be healthy
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("db", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("cache", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("messaging", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("backend", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("ai-service", cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync("frontend", cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("db", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("cache", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("messaging", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("backend", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("ai-service", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync("frontend", cancellationToken).WaitAsync(TimeSpan.FromMinutes(3));
 
         // Initialize Playwright
         _playwright = await Playwright.CreateAsync();
